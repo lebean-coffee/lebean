@@ -16,7 +16,7 @@ window.LEBEAN_CONFIG = {
     "tiktok": "@lebean.dvo"
   },
   "address": {
-    "street": "Greenwoods",
+    "street": "",
     "area": "Mintal",
     "city": "Davao City",
     "region": "Davao del Sur",
@@ -443,7 +443,7 @@ window.LEBEAN_CONFIG = {
     "about": {
       "label": "About us",
       "title": "Hello, we're *Le Bean.*",
-      "lead": "A small coffee and comfort food spot in Greenwoods, Mintal, Davao City, built on one simple idea: a good cup can make an ordinary day better.",
+      "lead": "A small coffee and comfort food spot in Mintal, Davao City, built on one simple idea: a good cup can make an ordinary day better.",
       "asideTitle": "Sip. Smile. Repeat.",
       "asideText": "It's our tagline, our routine, and our promise.",
       "storyLabel": "Our story",
@@ -465,7 +465,7 @@ window.LEBEAN_CONFIG = {
       "quote": "“Coffee should make your day lighter. That's the whole job.”",
       "quoteBy": "— The Le Bean team",
       "ctaTitle": "Wherever you are, *we'll come to you.*",
-      "ctaText": "We deliver from Greenwoods, Mintal through GrabFood — and we're available for [special events](index.html#events) too."
+      "ctaText": "We deliver from Mintal through GrabFood — and we're available for [special events](index.html#events) too."
     },
     "order": {
       "label": "Order online",

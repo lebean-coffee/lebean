@@ -1,0 +1,1376 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="robots" content="noindex, nofollow">
+  <title>Le Bean · Website editor</title>
+  <link rel="icon" href="favicon.svg" type="image/svg+xml">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,400;12..96,500;12..96,600;12..96,700&family=Caveat:wght@600&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bean: #3b2507; --bean-deep: #2a1a04; --cream: #f3edb5; --paper: #f7f2d8; --card: #fffdf3;
+      --caramel: #c98b3a; --grab: #00b14f; --red: #b3412e; --amber: #9a6a12;
+      --line: rgba(59, 37, 7, 0.14); --muted: rgba(59, 37, 7, 0.65);
+      --sans: "Bricolage Grotesque", system-ui, -apple-system, "Segoe UI", sans-serif;
+      --r: 16px;
+    }
+    * { box-sizing: border-box; }
+    html, body { margin: 0; }
+    body { font-family: var(--sans); background: var(--paper); color: var(--bean); font-size: 15px; line-height: 1.45; }
+    button, input, select, textarea { font: inherit; color: inherit; }
+    a { color: inherit; }
+    [hidden] { display: none !important; }
+
+    /* ---------- top bar ---------- */
+    .top { position: sticky; top: 0; z-index: 30; background: var(--bean); color: var(--cream); }
+    .top-inner { display: flex; flex-wrap: wrap; align-items: center; gap: 10px 16px; padding: 10px 20px; max-width: 1280px; margin: 0 auto; }
+    .brand { display: flex; align-items: center; gap: 10px; font-weight: 600; white-space: nowrap; }
+    .brand img { height: 28px; width: auto; }
+    .brand small { font-weight: 500; opacity: 0.7; }
+    .status { flex: 1 1 220px; min-width: 0; font-size: 13px; opacity: 0.85; display: flex; align-items: center; gap: 8px; }
+    .status .dot { width: 8px; height: 8px; border-radius: 50%; background: var(--grab); flex-shrink: 0; }
+    .status.dirty .dot { background: var(--caramel); box-shadow: 0 0 0 3px rgba(201, 139, 58, 0.3); }
+    .status span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .actions { display: flex; flex-wrap: wrap; gap: 6px; }
+    .btn {
+      display: inline-flex; align-items: center; justify-content: center; gap: 6px; min-height: 38px; padding: 7px 14px;
+      border-radius: 999px; border: 1px solid transparent; background: var(--bean); color: var(--cream);
+      font-weight: 600; font-size: 14px; cursor: pointer; text-decoration: none; white-space: nowrap;
+      transition: background .15s, border-color .15s, transform .15s;
+    }
+    .btn:hover { background: var(--bean-deep); }
+    .btn:active { transform: translateY(1px); }
+    .btn:disabled { opacity: 0.45; cursor: default; }
+    .btn.light { background: var(--cream); color: var(--bean); }
+    .btn.light:hover { background: #fff8c9; }
+    .btn.primary { background: var(--caramel); color: var(--bean); }
+    .btn.primary:hover { background: #d99b4a; }
+    .btn.ghost { background: transparent; border-color: rgba(243, 237, 181, 0.35); color: var(--cream); }
+    .btn.ghost:hover { border-color: var(--cream); background: rgba(243, 237, 181, 0.08); }
+    .btn.outline { background: transparent; border-color: rgba(59, 37, 7, 0.3); color: var(--bean); }
+    .btn.outline:hover { border-color: var(--bean); background: rgba(59, 37, 7, 0.04); }
+    .btn.small { min-height: 32px; padding: 4px 11px; font-size: 13px; }
+    .btn.danger { background: transparent; border-color: rgba(179, 65, 46, 0.4); color: var(--red); }
+    .btn.danger:hover { background: rgba(179, 65, 46, 0.08); }
+    .icon-btn {
+      width: 32px; height: 32px; display: inline-grid; place-items: center; border-radius: 9px; border: 1px solid var(--line);
+      background: var(--card); cursor: pointer; font-size: 14px; flex-shrink: 0;
+    }
+    .icon-btn:hover { border-color: var(--bean); }
+    .icon-btn:disabled { opacity: 0.35; cursor: default; }
+    .icon-btn.del:hover { border-color: var(--red); color: var(--red); }
+    :focus-visible { outline: 2px solid var(--caramel); outline-offset: 2px; }
+
+    /* ---------- banners ---------- */
+    .banner { max-width: 1280px; margin: 14px auto 0; padding: 0 20px; }
+    .banner > div { display: flex; flex-wrap: wrap; align-items: center; gap: 10px 14px; padding: 12px 16px; border-radius: 12px; background: #fff3d6; border: 1px solid #ecd39a; }
+    .banner p { margin: 0; flex: 1 1 260px; }
+
+    /* ---------- layout ---------- */
+    .layout { display: grid; grid-template-columns: 220px 1fr; gap: 24px; max-width: 1280px; margin: 0 auto; padding: 20px; align-items: start; }
+    .tabs { position: sticky; top: 80px; display: flex; flex-direction: column; gap: 2px; }
+    .tab {
+      display: flex; align-items: center; gap: 10px; text-align: left; border: 0; background: transparent; padding: 10px 12px;
+      border-radius: 10px; cursor: pointer; font-weight: 500; color: var(--muted);
+    }
+    .tab:hover { background: rgba(59, 37, 7, 0.05); color: var(--bean); }
+    .tab[aria-selected="true"] { background: var(--bean); color: var(--cream); }
+    .tab .ico { width: 20px; text-align: center; }
+    .tab-sep { height: 1px; background: var(--line); margin: 8px 6px; }
+    main { min-width: 0; }
+
+    .panel-head { margin-bottom: 18px; }
+    .panel-head h1 { font-size: 28px; letter-spacing: -0.02em; margin: 0 0 4px; }
+    .panel-head p { margin: 0; color: var(--muted); max-width: 70ch; }
+    .panel-head .row { margin-top: 14px; }
+    .row { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+    .card { background: var(--card); border: 1px solid var(--line); border-radius: var(--r); padding: 16px; margin-bottom: 14px; }
+    .card h2 { font-size: 17px; margin: 0 0 4px; letter-spacing: -0.01em; }
+    .card > p.hint { margin: 0 0 12px; color: var(--muted); font-size: 13.5px; }
+    .grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 12px 16px; }
+    .field { display: grid; gap: 5px; min-width: 0; }
+    .field > span { font-size: 13px; font-weight: 600; }
+    .field small { color: var(--muted); font-size: 12.5px; }
+    input[type=text], input[type=url], input[type=time], select, textarea {
+      width: 100%; min-height: 38px; padding: 7px 10px; border: 1px solid rgba(59, 37, 7, 0.22); border-radius: 10px; background: #fff;
+    }
+    input[type=time] { width: auto; min-width: 118px; }
+    textarea { min-height: 80px; resize: vertical; }
+    input:focus, select:focus, textarea:focus { outline: none; border-color: var(--bean); box-shadow: 0 0 0 3px rgba(201, 139, 58, 0.25); }
+    .input-link { display: flex; gap: 6px; }
+    .input-link a { flex-shrink: 0; }
+    .muted { color: var(--muted); }
+    .pill { display: inline-flex; align-items: center; font-size: 12px; font-weight: 600; padding: 2px 9px; border-radius: 999px; background: rgba(59, 37, 7, 0.07); white-space: nowrap; }
+    .pill.warn { background: #fff3d6; color: var(--amber); }
+    .switch { display: inline-flex; align-items: center; gap: 8px; cursor: pointer; font-size: 13.5px; user-select: none; }
+    .switch input { width: 18px; height: 18px; accent-color: var(--grab); }
+
+    /* ---------- menu editor ---------- */
+    .sec { padding: 0; overflow: hidden; }
+    .sec-head { display: flex; align-items: center; gap: 8px; padding: 12px 14px; background: rgba(59, 37, 7, 0.035); border-bottom: 1px solid var(--line); }
+    .sec-head .sec-title { flex: 1; font-weight: 700; font-size: 16px; min-width: 120px; background: transparent; border-color: transparent; }
+    .sec-head .sec-title:hover { border-color: var(--line); background: #fff; }
+    .sec.collapsed .sec-head { border-bottom: 0; }
+    .sec-tools { display: flex; gap: 4px; }
+    .collapse-btn { transition: transform .2s; }
+    .sec.collapsed .collapse-btn { transform: rotate(-90deg); }
+    .items { padding: 6px 14px 14px; }
+    .item { display: grid; grid-template-columns: 64px 1fr auto; gap: 12px; align-items: center; padding: 10px 0; border-bottom: 1px dashed var(--line); }
+    .item:last-of-type { border-bottom: 0; }
+    .item.is-hidden .thumb img, .item.is-hidden .item-name { opacity: 0.45; }
+    .thumb {
+      position: relative; width: 64px; height: 64px; border-radius: 12px; border: 1px solid var(--line); background: #fff;
+      padding: 0; cursor: pointer; overflow: hidden;
+    }
+    .thumb img { width: 100%; height: 100%; object-fit: contain; display: block; }
+    .thumb .no-photo { position: absolute; inset: 0; display: grid; place-items: center; font-size: 11px; color: var(--muted); text-align: center; line-height: 1.1; padding: 4px; }
+    .thumb .chg { position: absolute; inset: auto 0 0 0; background: rgba(42, 26, 4, 0.75); color: var(--cream); font-size: 10.5px; font-weight: 600; padding: 2px 0; opacity: 0; transition: opacity .15s; }
+    .thumb:hover .chg, .thumb:focus-visible .chg { opacity: 1; }
+    .item-main { display: grid; gap: 6px; min-width: 0; }
+    .item-name { font-weight: 600; }
+    .item-desc { min-height: 54px; font-size: 13.5px; line-height: 1.4; }
+    .item.is-hidden .item-desc { opacity: 0.6; }
+    .item-meta { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 14px; font-size: 13px; }
+    .item-meta select { width: auto; min-height: 32px; padding: 3px 8px; font-size: 13px; }
+    .item-meta .path { color: var(--muted); font-size: 12px; overflow-wrap: anywhere; }
+    .item-tools { display: flex; gap: 4px; align-items: center; }
+    .item-tools select { width: 34px; min-height: 32px; padding: 0; border-radius: 9px; text-align: center; cursor: pointer; appearance: none; -webkit-appearance: none; background: var(--card) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%233b2507' stroke-width='2' stroke-linecap='round'%3E%3Cpath d='M5 12h14M13 6l6 6-6 6'/%3E%3C/svg%3E") no-repeat center / 16px; color: transparent; border-color: var(--line); }
+    .item-tools select option { color: var(--bean); }
+    .add-row { margin-top: 10px; }
+    .note { font-size: 12.5px; color: var(--amber); }
+
+    /* ---------- hours ---------- */
+    .day { display: grid; grid-template-columns: 110px 170px 1fr; gap: 10px 14px; align-items: start; padding: 12px 0; border-bottom: 1px dashed var(--line); }
+    .day:last-child { border-bottom: 0; }
+    .day-name { font-weight: 700; padding-top: 8px; }
+    .ranges { display: grid; gap: 8px; }
+    .range { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }
+    .day-tools { display: flex; flex-wrap: wrap; gap: 6px; }
+    .err { color: var(--red); font-size: 12.5px; font-weight: 600; }
+    .preview-box { background: var(--bean); color: var(--cream); border-radius: 12px; padding: 14px 16px; }
+    .preview-box table { border-collapse: collapse; width: 100%; max-width: 360px; }
+    .preview-box td { padding: 3px 0; vertical-align: top; }
+    .preview-box td:last-child { text-align: right; }
+    .preview-box p { margin: 12px 0 0; color: rgba(243, 237, 181, 0.8); font-size: 14px; }
+
+    /* ---------- picks ---------- */
+    .list { display: grid; gap: 6px; }
+    .list-row { display: flex; align-items: center; gap: 8px; padding: 6px 8px; border: 1px solid var(--line); border-radius: 10px; background: #fff; }
+    .list-row .grow { flex: 1; min-width: 0; }
+    .list-row img { width: 36px; height: 36px; object-fit: contain; border-radius: 8px; background: #fff; }
+    .list-row input { min-height: 34px; }
+
+    /* ---------- announcement preview ---------- */
+    .announce-prev { background: var(--caramel); color: var(--bean); font-weight: 600; text-align: center; padding: 9px 12px; border-radius: 10px; }
+
+    /* ---------- advanced ---------- */
+    .code { font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; font-size: 12.5px; min-height: 420px; white-space: pre; }
+
+    /* ---------- help ---------- */
+    .steps { margin: 0; padding-left: 20px; display: grid; gap: 6px; }
+    .help h2 { margin-top: 0; }
+    kbd { font-family: inherit; font-size: 12px; border: 1px solid var(--line); border-bottom-width: 2px; border-radius: 5px; padding: 0 5px; background: #fff; }
+
+    /* ---------- empty state ---------- */
+    .empty { text-align: center; padding: 50px 20px; }
+    .empty h1 { font-size: 26px; margin: 0 0 8px; }
+    .empty p { color: var(--muted); max-width: 52ch; margin: 0 auto 18px; }
+
+    /* ---------- dialogs ---------- */
+    dialog { border: 0; border-radius: 18px; padding: 0; color: var(--bean); background: var(--paper); box-shadow: 0 30px 80px -20px rgba(0, 0, 0, 0.5); max-width: calc(100vw - 24px); }
+    dialog::backdrop { background: rgba(42, 26, 4, 0.55); }
+    .dlg-head { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 12px; padding: 12px 16px; background: var(--bean); color: var(--cream); }
+    .dlg-head h2 { margin: 0; font-size: 17px; flex: 1; }
+    .dlg-body { padding: 16px; }
+    #preview-dlg { width: 1240px; height: calc(100vh - 32px); }
+    #preview-dlg[open] { display: flex; flex-direction: column; }
+    #preview-dlg .dlg-body { flex: 1; display: flex; flex-direction: column; align-items: center; background: #d9d2b3; padding: 12px; min-height: 0; }
+    #preview-frame { flex: 1; width: 100%; border: 0; border-radius: 10px; background: #fff; transition: width .25s; }
+    #preview-dlg.phone #preview-frame { width: 390px; max-width: 100%; }
+    .seg { display: inline-flex; border: 1px solid rgba(243, 237, 181, 0.35); border-radius: 999px; overflow: hidden; }
+    .seg button { border: 0; background: transparent; color: var(--cream); padding: 5px 12px; cursor: pointer; font-size: 13px; font-weight: 600; }
+    .seg button[aria-pressed="true"] { background: var(--cream); color: var(--bean); }
+    .dlg-head select { width: auto; min-height: 32px; padding: 3px 8px; color: var(--bean); }
+    #issues-dlg { width: 560px; }
+    .issue { display: flex; gap: 10px; align-items: baseline; padding: 8px 0; border-bottom: 1px dashed var(--line); }
+    .issue b { flex-shrink: 0; font-size: 12px; text-transform: uppercase; letter-spacing: 0.05em; }
+    .issue.error b { color: var(--red); }
+    .issue.warning b { color: var(--amber); }
+    .issue span { flex: 1; }
+    .dlg-foot { display: flex; flex-wrap: wrap; justify-content: flex-end; gap: 8px; padding: 12px 16px; border-top: 1px solid var(--line); }
+
+    /* ---------- page text ---------- */
+    .page-pills { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 14px; }
+    .page-pills button { border: 1px solid rgba(59, 37, 7, 0.25); background: transparent; border-radius: 999px; padding: 6px 13px; font-weight: 600; font-size: 13.5px; cursor: pointer; }
+    .page-pills button[aria-pressed="true"] { background: var(--bean); color: var(--cream); border-color: var(--bean); }
+    .fields { display: grid; gap: 14px; }
+    .fmt-prev { margin-top: 2px; font-size: 13.5px; background: #fff; border: 1px dashed var(--line); border-radius: 8px; padding: 6px 10px; line-height: 1.5; }
+    .fmt-prev::before { content: "Looks like: "; color: var(--muted); font-size: 12px; }
+    .fmt-prev .hand, .fmt-help .hand { font-family: "Caveat", cursive; font-weight: 600; color: var(--caramel); font-size: 1.3em; line-height: 1; }
+    .fmt-prev .oval, .fmt-help .oval { border: 2px solid var(--caramel); border-radius: 50%; padding: 0 0.35em; }
+    .fmt-prev .scribble-u, .fmt-help .scribble-u { text-decoration: underline wavy var(--caramel); text-underline-offset: 4px; }
+    .fmt-prev a, .fmt-help a { color: #0a6b35; }
+    .fmt-help summary { cursor: pointer; font-weight: 700; }
+    .fmt-help table { border-collapse: collapse; margin-top: 10px; font-size: 13.5px; width: 100%; }
+    .fmt-help td { padding: 6px 8px; border-top: 1px dashed var(--line); vertical-align: top; }
+    .fmt-help code { font-family: ui-monospace, Menlo, Consolas, monospace; background: rgba(59, 37, 7, 0.06); padding: 1px 5px; border-radius: 5px; font-size: 12.5px; }
+    .faq-row { display: grid; grid-template-columns: 1fr auto; gap: 8px; padding: 10px; border: 1px solid var(--line); border-radius: 12px; background: #fff; }
+    .faq-row .qa { display: grid; gap: 6px; }
+    .faq-row .tools { display: flex; flex-direction: column; gap: 4px; }
+    .empty-steps { list-style: none; padding: 0; margin: 26px auto 0; display: flex; flex-wrap: wrap; justify-content: center; gap: 10px; counter-reset: st; }
+    .empty-steps li { counter-increment: st; background: var(--card); border: 1px solid var(--line); border-radius: 999px; padding: 6px 14px 6px 8px; font-size: 14px; }
+    .empty-steps li::before { content: counter(st); display: inline-grid; place-items: center; width: 22px; height: 22px; border-radius: 50%; background: var(--bean); color: var(--cream); font-size: 12px; font-weight: 700; margin-right: 8px; }
+
+    /* ---------- toast ---------- */
+    #toast { position: fixed; left: 50%; bottom: 20px; transform: translate(-50%, 20px); opacity: 0; z-index: 100; background: var(--bean-deep); color: var(--cream); padding: 10px 18px; border-radius: 999px; font-weight: 600; font-size: 14px; transition: opacity .2s, transform .2s; pointer-events: none; max-width: calc(100vw - 32px); text-align: center; }
+    #toast.show { opacity: 1; transform: translate(-50%, 0); }
+    #toast.bad { background: var(--red); }
+
+    /* ---------- responsive ---------- */
+    @media (max-width: 860px) {
+      .layout { grid-template-columns: 1fr; padding: 12px; gap: 12px; }
+      .tabs { position: sticky; top: 0; z-index: 20; flex-direction: row; overflow-x: auto; background: var(--paper); padding: 6px 0; scrollbar-width: none; }
+      .tabs::-webkit-scrollbar { display: none; }
+      .tab { flex-shrink: 0; padding: 8px 12px; }
+      .tab-sep { display: none; }
+      .top { position: static; }
+      .top-inner { padding: 10px 12px; }
+      .status { order: 3; flex-basis: 100%; }
+      .actions { order: 4; width: 100%; }
+      .grid2 { grid-template-columns: 1fr; }
+      .day { grid-template-columns: 1fr; gap: 8px; }
+      .day-name { padding-top: 0; }
+      .banner { padding: 0 12px; }
+    }
+    @media (max-width: 560px) {
+      .item { grid-template-columns: 56px 1fr; }
+      .thumb { width: 56px; height: 56px; }
+      .item-tools { grid-column: 1 / -1; justify-content: flex-end; }
+      .sec-head { flex-wrap: wrap; }
+      .sec-head .pill { order: 4; }
+      .panel-head h1 { font-size: 24px; }
+      .btn { font-size: 13px; padding: 6px 12px; }
+    }
+  </style>
+</head>
+<body>
+  <header class="top">
+    <div class="top-inner">
+      <div class="brand"><img src="images/brand/logo-cream.png" alt="Le Bean" onerror="this.replaceWith(document.createTextNode('LE BEAN'))"><small>Website editor</small></div>
+      <div class="status" id="status" role="status"><i class="dot"></i><span>Loading…</span></div>
+      <div class="actions">
+        <button class="btn ghost" id="btn-undo" type="button" disabled title="Undo (Ctrl+Z)">↶ Undo</button>
+        <button class="btn ghost" id="btn-preview" type="button" disabled>Preview</button>
+        <button class="btn ghost" id="btn-upload" type="button">Upload config.js</button>
+        <button class="btn primary" id="btn-download" type="button" disabled>Download config.js</button>
+      </div>
+    </div>
+  </header>
+  <input type="file" id="file-upload" accept=".js,.json,application/json,text/javascript" hidden>
+  <input type="file" id="photo-input" accept="image/*" hidden>
+
+  <div class="banner" id="banner" hidden></div>
+
+  <div class="layout" id="layout" hidden>
+    <nav class="tabs" role="tablist" aria-label="Sections">
+      <button class="tab" role="tab" data-tab="menu"><span class="ico">☕</span>Menu</button>
+      <button class="tab" role="tab" data-tab="text"><span class="ico">✎</span>Page text</button>
+      <button class="tab" role="tab" data-tab="hours"><span class="ico">◷</span>Opening hours</button>
+      <button class="tab" role="tab" data-tab="highlights"><span class="ico">★</span>Home highlights</button>
+      <button class="tab" role="tab" data-tab="announcement"><span class="ico">📣</span>Announcement</button>
+      <button class="tab" role="tab" data-tab="contact"><span class="ico">⌂</span>Contact &amp; links</button>
+      <div class="tab-sep"></div>
+      <button class="tab" role="tab" data-tab="advanced"><span class="ico">⚙</span>Advanced</button>
+      <button class="tab" role="tab" data-tab="help"><span class="ico">?</span>How to publish</button>
+    </nav>
+    <main id="panel" role="tabpanel"></main>
+  </div>
+
+  <div class="empty" id="empty" hidden>
+    <h1>Upload your website settings to start</h1>
+    <p id="empty-text">Your settings live in <b>config.js</b>, inside your website folder. Upload it here, make your changes, then download the updated file and upload it to your web host.</p>
+    <div class="row" style="justify-content:center">
+      <button class="btn primary" id="empty-upload" type="button">Upload config.js</button>
+    </div>
+    <ol class="empty-steps"><li><b>Upload</b> config.js</li><li><b>Edit</b> menu, text, hours, and more</li><li><b>Download</b> and upload to your host</li></ol>
+  </div>
+
+  <dialog id="preview-dlg" aria-label="Preview">
+    <div class="dlg-head">
+      <h2>Preview <span class="muted" style="color:rgba(243,237,181,.7);font-weight:500;font-size:13px">· your unsaved changes</span></h2>
+      <select id="preview-page" aria-label="Page">
+        <option value="index.html">Home</option><option value="menu.html">Menu</option><option value="about.html">About us</option>
+        <option value="order.html">Order online</option><option value="contact.html">Contact</option>
+      </select>
+      <div class="seg" role="group" aria-label="Screen size">
+        <button type="button" data-size="desktop" aria-pressed="true">Computer</button><button type="button" data-size="phone" aria-pressed="false">Phone</button>
+      </div>
+      <button class="btn ghost small" id="preview-tab" type="button">Open in new tab ↗</button>
+      <button class="btn light small" id="preview-close" type="button">Close</button>
+    </div>
+    <div class="dlg-body">
+      <iframe id="preview-frame" title="Website preview"></iframe>
+      <p class="muted" style="margin:8px 0 0;font-size:12.5px;text-align:center">The preview needs admin.html to sit in your website folder. New photos show up once they're in your site folder.</p>
+    </div>
+  </dialog>
+
+  <dialog id="issues-dlg" aria-label="Check before saving">
+    <div class="dlg-head"><h2 id="issues-title">Check before saving</h2></div>
+    <div class="dlg-body" id="issues-body"></div>
+    <div class="dlg-foot" id="issues-foot"></div>
+  </dialog>
+
+  <div id="toast" role="status" aria-live="polite"></div>
+
+<script>
+(function () {
+  "use strict";
+
+  /* =========================================================
+     Constants & helpers
+     ========================================================= */
+  var DAYS = ["monday", "tuesday", "wednesday", "thursday", "friday", "saturday", "sunday"];
+  var DAY_NAME = { monday: "Monday", tuesday: "Tuesday", wednesday: "Wednesday", thursday: "Thursday", friday: "Friday", saturday: "Saturday", sunday: "Sunday" };
+  var DAY_ABBR = { monday: "Mon", tuesday: "Tue", wednesday: "Wed", thursday: "Thu", friday: "Fri", saturday: "Sat", sunday: "Sun" };
+  var DRAFT_KEY = "lebean-admin-draft";
+  var HEADER = "/* Le Bean website settings.\n   Edit these with admin.html (recommended), or carefully by hand.\n   If you edit by hand, keep the data valid JSON (straight double quotes, commas between items). */\n";
+  var PAGES = [["", "No link"], ["index.html", "Home page"], ["menu.html", "Menu page"], ["about.html", "About us page"], ["order.html", "Order online page"], ["contact.html", "Contact page"], ["index.html#events", "Special events section"]];
+  // Page wording fields (generated from the same list the website uses)
+  var COPY_SCHEMA = [{"id": "home", "title": "Home page", "groups": [{"title": "Top of the page (hero)", "fields": [{"k": "heroEyebrow", "label": "Small line above the big title", "type": "line"}, {"k": "heroWord1", "label": "Big title — line 1", "type": "line"}, {"k": "heroNote1", "label": "Small note beside line 1", "type": "line"}, {"k": "heroWord2", "label": "Big title — line 2", "type": "line"}, {"k": "heroNote2", "label": "Small note beside line 2", "type": "line"}, {"k": "heroWord3", "label": "Big title — line 3", "type": "line"}, {"k": "heroNote3", "label": "Small note beside line 3", "type": "line"}, {"k": "heroLead", "label": "Intro paragraph", "type": "text"}, {"k": "heroCtaNote", "label": "Handwritten note under the buttons", "type": "text"}, {"k": "videoNote", "label": "Handwritten note above the video", "type": "text"}, {"k": "floatService", "label": "Badge on the video (top)", "type": "line"}, {"k": "floatRating", "label": "Badge on the video (bottom)", "type": "line"}]}, {"title": "Three facts under the hero", "fields": [{"k": "fact1Title", "label": "Fact 1 — title", "type": "line"}, {"k": "fact1Text", "label": "Fact 1 — text", "type": "line"}, {"k": "fact2Title", "label": "Fact 2 — title", "type": "line"}, {"k": "fact2Text", "label": "Fact 2 — text", "type": "line"}, {"k": "fact3Title", "label": "Fact 3 — title", "type": "line"}, {"k": "fact3Text", "label": "Fact 3 — text", "type": "line"}]}, {"title": "Le Bean picks", "fields": [{"k": "picksLabel", "label": "Section label", "type": "line"}, {"k": "picksTitle", "label": "Heading", "type": "line"}, {"k": "picksText", "label": "Text beside the heading", "type": "text"}]}, {"title": "Coffee & food section", "fields": [{"k": "foodLabel", "label": "Section label", "type": "line"}, {"k": "foodTitle", "label": "Heading", "type": "line"}, {"k": "foodText", "label": "Paragraph", "type": "text"}, {"k": "foodList", "label": "Bullet list", "type": "list"}, {"k": "foodCaption", "label": "Caption on the photo", "type": "line"}]}, {"title": "Behind the bar (videos)", "fields": [{"k": "reelsLabel", "label": "Section label", "type": "line"}, {"k": "reelsTitle", "label": "Heading", "type": "line"}, {"k": "reelsText", "label": "Text beside the heading", "type": "text"}, {"k": "reel1", "label": "Video 1 caption", "type": "line"}, {"k": "reel2", "label": "Video 2 caption", "type": "line"}, {"k": "reel3", "label": "Video 3 caption", "type": "line"}, {"k": "reel4", "label": "Video 4 caption", "type": "line"}, {"k": "reelsNote", "label": "Handwritten note under the videos", "type": "text"}]}, {"title": "Special events", "fields": [{"k": "eventsLabel", "label": "Section label", "type": "line"}, {"k": "eventsTitle", "label": "Heading", "type": "line"}, {"k": "eventsText", "label": "Paragraph", "type": "text"}, {"k": "eventTags", "label": "Event type tags", "type": "list"}, {"k": "stub1", "label": "Ticket stub — top line", "type": "line"}, {"k": "stub2", "label": "Ticket stub — big text", "type": "text"}, {"k": "stub3", "label": "Ticket stub — line under it", "type": "line"}, {"k": "stub4", "label": "Ticket stub — bottom line", "type": "line"}]}, {"title": "The Le Bean way", "fields": [{"k": "wayLabel", "label": "Section label", "type": "line"}, {"k": "wayTitle", "label": "Heading", "type": "line"}, {"k": "wayText", "label": "Text beside the heading", "type": "text"}, {"k": "way1Word", "label": "Column 1 — big word", "type": "line"}, {"k": "way1Title", "label": "Column 1 — title", "type": "line"}, {"k": "way1Text", "label": "Column 1 — text", "type": "text"}, {"k": "way2Word", "label": "Column 2 — big word", "type": "line"}, {"k": "way2Title", "label": "Column 2 — title", "type": "line"}, {"k": "way2Text", "label": "Column 2 — text", "type": "text"}, {"k": "way3Word", "label": "Column 3 — big word", "type": "line"}, {"k": "way3Title", "label": "Column 3 — title", "type": "line"}, {"k": "way3Text", "label": "Column 3 — text", "type": "text"}]}, {"title": "Bottom panel", "fields": [{"k": "ctaTitle", "label": "Heading", "type": "line"}, {"k": "ctaText", "label": "Text", "type": "text"}]}]}, {"id": "menu", "title": "Menu page", "groups": [{"title": "Top of the page", "fields": [{"k": "label", "label": "Small line above the title", "type": "line"}, {"k": "title", "label": "Big title", "type": "line"}, {"k": "lead", "label": "Intro paragraph", "type": "text"}, {"k": "asideTitle", "label": "Side note — handwritten title", "type": "line"}, {"k": "asideText", "label": "Side note — text", "type": "text"}]}, {"title": "Card at the bottom of the menu", "fields": [{"k": "noteTitle", "label": "Title", "type": "line"}, {"k": "noteText", "label": "Text", "type": "text"}]}]}, {"id": "about", "title": "About us page", "groups": [{"title": "Top of the page", "fields": [{"k": "label", "label": "Small line above the title", "type": "line"}, {"k": "title", "label": "Big title", "type": "line"}, {"k": "lead", "label": "Intro paragraph", "type": "text"}, {"k": "asideTitle", "label": "Side note — handwritten title", "type": "line"}, {"k": "asideText", "label": "Side note — text", "type": "text"}]}, {"title": "Our story", "fields": [{"k": "storyLabel", "label": "Section label", "type": "line"}, {"k": "storyTitle", "label": "Heading", "type": "line"}, {"k": "storyText", "label": "Story — main paragraph", "type": "text"}, {"k": "storyText2", "label": "Story — second paragraph", "type": "text"}]}, {"title": "What we care about", "fields": [{"k": "valuesLabel", "label": "Section label", "type": "line"}, {"k": "valuesTitle", "label": "Heading", "type": "line"}, {"k": "valuesText", "label": "Text beside the heading", "type": "text"}, {"k": "value1Title", "label": "Promise 1 — title", "type": "line"}, {"k": "value1Text", "label": "Promise 1 — text", "type": "text"}, {"k": "value2Title", "label": "Promise 2 — title", "type": "line"}, {"k": "value2Text", "label": "Promise 2 — text", "type": "text"}, {"k": "value3Title", "label": "Promise 3 — title", "type": "line"}, {"k": "value3Text", "label": "Promise 3 — text", "type": "text"}]}, {"title": "At the bar", "fields": [{"k": "barLabel", "label": "Section label", "type": "line"}, {"k": "barTitle", "label": "Heading", "type": "line"}, {"k": "barText", "label": "Paragraph", "type": "text"}]}, {"title": "Quote", "fields": [{"k": "quote", "label": "Quote", "type": "text"}, {"k": "quoteBy", "label": "Who said it", "type": "line"}]}, {"title": "Bottom panel", "fields": [{"k": "ctaTitle", "label": "Heading", "type": "line"}, {"k": "ctaText", "label": "Text", "type": "text"}]}]}, {"id": "order", "title": "Order online page", "groups": [{"title": "Top of the page", "fields": [{"k": "label", "label": "Small line above the title", "type": "line"}, {"k": "title", "label": "Big title", "type": "line"}, {"k": "lead", "label": "Intro paragraph", "type": "text"}, {"k": "cardPill", "label": "Card — green label", "type": "line"}, {"k": "cardTitle", "label": "Card — heading", "type": "line"}, {"k": "cardText", "label": "Card — text", "type": "text"}, {"k": "cardTiny", "label": "Card — small print", "type": "text"}]}, {"title": "How it works", "fields": [{"k": "stepsLabel", "label": "Section label", "type": "line"}, {"k": "stepsTitle", "label": "Heading", "type": "line"}, {"k": "step1Num", "label": "Step 1 — number", "type": "line"}, {"k": "step1Title", "label": "Step 1 — title", "type": "line"}, {"k": "step1Text", "label": "Step 1 — text", "type": "text"}, {"k": "step2Num", "label": "Step 2 — number", "type": "line"}, {"k": "step2Title", "label": "Step 2 — title", "type": "line"}, {"k": "step2Text", "label": "Step 2 — text", "type": "text"}, {"k": "step3Num", "label": "Step 3 — number", "type": "line"}, {"k": "step3Title", "label": "Step 3 — title", "type": "line"}, {"k": "step3Text", "label": "Step 3 — text", "type": "text"}]}, {"title": "Questions (FAQ)", "fields": [{"k": "faqLabel", "label": "Section label", "type": "line"}, {"k": "faq", "label": "Questions and answers", "type": "faq"}]}, {"title": "GrabFood banner (beside the questions)", "fields": [{"k": "promoText", "label": "Line under the banner", "type": "line"}]}, {"title": "Bottom panel", "fields": [{"k": "ctaTitle", "label": "Heading", "type": "line"}, {"k": "ctaText", "label": "Text", "type": "text"}]}]}, {"id": "contact", "title": "Contact page", "groups": [{"title": "Top of the page", "fields": [{"k": "label", "label": "Small line above the title", "type": "line"}, {"k": "title", "label": "Big title", "type": "line"}, {"k": "lead", "label": "Intro paragraph", "type": "text"}]}, {"title": "Contact details list", "fields": [{"k": "fbNote", "label": "Note under the Facebook link", "type": "line"}, {"k": "eventsText", "label": "Events line", "type": "text"}]}, {"title": "Facebook card", "fields": [{"k": "feedTitle", "label": "Heading", "type": "line"}, {"k": "feedText", "label": "Text", "type": "text"}]}]}, {"id": "footer", "title": "Footer (every page)", "groups": [{"title": "Footer", "fields": [{"k": "title", "label": "Big heading", "type": "text"}, {"k": "tagline", "label": "Tagline under the logo", "type": "line"}, {"k": "recognition", "label": "Small line under the tagline", "type": "line"}]}]}, {"id": "shared", "title": "Grab badges (Home, About & Order pages)", "groups": [{"title": "Badges", "fields": [{"k": "trustRating", "label": "Rating badge", "type": "line"}, {"k": "trustService", "label": "Service badge", "type": "line"}]}]}];
+
+  var state = {
+    cfg: null, baseline: "", source: "", textPage: "home",
+    tab: "menu", undo: [], lastKey: null, lastAt: 0,
+    pending: {},      // path -> Blob : new photos not yet in the site folder
+    blobUrls: {},     // path -> object URL for thumbnails
+    collapsed: {}, photoTarget: null, savedAt: null
+  };
+
+  function $(s, r) { return (r || document).querySelector(s); }
+  function $$(s, r) { return Array.prototype.slice.call((r || document).querySelectorAll(s)); }
+  function esc(v) {
+    return String(v == null ? "" : v).replace(/[&<>"']/g, function (c) {
+      return { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c];
+    });
+  }
+  function clone(o) { return JSON.parse(JSON.stringify(o)); }
+  function slug(s) {
+    return String(s || "").toLowerCase().normalize("NFKD").replace(/[̀-ͯ]/g, "")
+      .replace(/&/g, " and ").replace(/[^a-z0-9]+/g, "_").replace(/^_+|_+$/g, "") || "item";
+  }
+  function uniqueId(base, taken) { var id = base, n = 2; while (taken[id]) id = base + "_" + (n++); return id; }
+  function getPath(o, path) { return path.split(".").reduce(function (x, k) { return x == null ? x : x[k]; }, o); }
+  function setPath(o, path, v) {
+    var ks = path.split("."), x = o;
+    for (var i = 0; i < ks.length - 1; i++) x = x[ks[i]];
+    x[ks[ks.length - 1]] = v;
+  }
+  function safeUrl(u) {
+    u = String(u == null ? "" : u).trim();
+    if (!u) return "";
+    if (/^(https?:|mailto:|tel:)/i.test(u)) return u;
+    if (/^[a-z][a-z0-9+.-]*:/i.test(u)) return "";
+    return u;
+  }
+  function isUrl(u) { return /^https?:\/\/[^\s]+\.[^\s]+/i.test(String(u || "").trim()); }
+  function toast(msg, bad) {
+    var t = $("#toast");
+    t.textContent = msg; t.className = "show" + (bad ? " bad" : "");
+    clearTimeout(toast.t); toast.t = setTimeout(function () { t.className = ""; }, 3200);
+  }
+  function timeNow() { return new Date().toLocaleTimeString([], { hour: "numeric", minute: "2-digit" }); }
+
+  /* ---------- hours (same rules as the website's js/main.js) ---------- */
+  function toHour(t) { var m = /^(\d{1,2}):(\d{2})$/.exec(String(t || "")); return m ? Math.min(24, +m[1] + +m[2] / 60) : NaN; }
+  function timeLabel(t) {
+    var h = toHour(t);
+    if (h >= 24) return "11:59pm";
+    var hh = Math.floor(h), mm = Math.round((h - hh) * 60), hr = hh % 12 === 0 ? 12 : hh % 12;
+    return hr + (mm ? ":" + (mm < 10 ? "0" : "") + mm : "") + (hh >= 12 ? "pm" : "am");
+  }
+  function validRanges(list) { return (list || []).filter(function (r) { return r && toHour(r[0]) < toHour(r[1]); }); }
+  function isAllDay(r) { return r.length === 1 && toHour(r[0][0]) === 0 && toHour(r[0][1]) >= 24; }
+  function hourGroups(cfg) {
+    var groups = [];
+    DAYS.forEach(function (d) {
+      var r = validRanges(cfg.hours[d]), key = JSON.stringify(r), last = groups[groups.length - 1];
+      if (last && last.key === key) last.days.push(d); else groups.push({ key: key, days: [d], ranges: r });
+    });
+    return groups;
+  }
+  function hoursTable(cfg) {
+    return hourGroups(cfg).map(function (g) {
+      var label = g.days.length === 1 ? DAY_NAME[g.days[0]] : DAY_ABBR[g.days[0]] + " – " + DAY_ABBR[g.days[g.days.length - 1]];
+      var val = !g.ranges.length ? "Closed" : isAllDay(g.ranges) ? "Open 24 hours" :
+        g.ranges.map(function (r) { return timeLabel(r[0]) + " – " + timeLabel(r[1]); }).join("<br>");
+      return "<tr><td>" + label + "</td><td>" + val + "</td></tr>";
+    }).join("");
+  }
+  function hoursSentence(cfg) {
+    var parts = hourGroups(cfg).map(function (g) {
+      var label = g.days.length === 1 ? DAY_NAME[g.days[0]] : DAY_NAME[g.days[0]] + " to " + DAY_NAME[g.days[g.days.length - 1]];
+      var val = !g.ranges.length ? "closed" : isAllDay(g.ranges) ? "24 hours" :
+        g.ranges.map(function (r) { return timeLabel(r[0]) + " – " + timeLabel(r[1]); }).join(" and ");
+      return label + " " + val;
+    });
+    return (parts.length < 3 ? parts.join(" and ") : parts.slice(0, -1).join(", ") + ", and " + parts[parts.length - 1]) + ".";
+  }
+
+  /* ---------- text formatting (same rules as the website's js/main.js) ---------- */
+  function fmtText(src, ctx) {
+    var keep = [];
+    function hold(html) { keep.push(html); return "\u0000" + (keep.length - 1) + "\u0000"; }
+    var s = String(src == null ? "" : src);
+    s = s.replace(/\{count\}/g, function () { return hold(String(ctx.total)); });
+    s = s.replace(/\{hours\}/g, function () { return hold(esc(ctx.hours)); });
+    s = esc(s);
+    s = s.replace(/\[([^\]\n]+)\]\(([^)\s]+)\)/g, function (m, text, url) {
+      url = url.replace(/&amp;/g, "&").replace(/\{(\w+)\}/g, function (t, k) { return ctx.links[k] != null ? ctx.links[k] : t; });
+      var u = safeUrl(url);
+      if (!u) return text;
+      return hold('<a href="' + esc(u) + '" target="_blank" rel="noopener">') + text + hold("</a>");
+    });
+    s = s.replace(/\*\*([^\n]+?)\*\*/g, "<b>$1</b>")
+         .replace(/\(\(([^\n]+?)\)\)/g, '<span class="oval">$1</span>')
+         .replace(/__([^\n]+?)__/g, '<span class="scribble-u">$1</span>')
+         .replace(/\*([^\n*]+?)\*/g, '<span class="hand">$1</span>')
+         .replace(/\r?\n/g, "<br>");
+    return s.replace(/\u0000(\d+)\u0000/g, function (m, i) { return keep[+i]; });
+  }
+  function fmtCtx() {
+    var c = state.cfg, total = 0;
+    c.menu.forEach(function (sec) { sec.items.forEach(function (it) { if (!it.hidden && it.name) total++; }); });
+    return { total: total, links: c.links, hours: hoursSentence(c) + (c.hoursNote ? " " + c.hoursNote : "") };
+  }
+
+  /* =========================================================
+     Reading, normalising & writing config.js
+     ========================================================= */
+  function parseConfigText(text) {
+    var t = String(text || "").replace(/^﻿/, "");
+    var m = /LEBEAN_CONFIG\s*=\s*/.exec(t);
+    var start = m ? t.indexOf("{", m.index + m[0].length) : t.indexOf("{");
+    var end = t.lastIndexOf("}");
+    if (start < 0 || end < start) throw new Error("This file doesn't look like a Le Bean config file.");
+    try { return JSON.parse(t.slice(start, end + 1)); }
+    catch (e) { throw new Error("The settings in this file have a typo, so they can't be read (" + e.message + ")."); }
+  }
+  function serialize(cfg) {
+    var json = JSON.stringify(cfg, null, 2).replace(/\[\s+"(\d{1,2}:\d{2})",\s+"(\d{1,2}:\d{2})"\s+\]/g, '["$1", "$2"]');
+    return HEADER + "window.LEBEAN_CONFIG = " + json + ";\n";
+  }
+  function normalize(c) {
+    c = c && typeof c === "object" ? c : {};
+    c.version = c.version || 1;
+    c.links = Object.assign({ grab: "", facebook: "", instagram: "", tiktok: "", messenger: "" }, c.links || {});
+    delete c.links.maps; // delivery only: no directions link
+    c.handles = Object.assign({ facebook: "", instagram: "", tiktok: "" }, c.handles || {});
+    c.address = Object.assign({ street: "", area: "", city: "", region: "", country: "" }, c.address || {});
+    c.hours = c.hours || {};
+    DAYS.forEach(function (d) { if (!Array.isArray(c.hours[d])) c.hours[d] = []; });
+    if (typeof c.hoursNote !== "string") c.hoursNote = "";
+    c.announcement = Object.assign({ enabled: false, text: "", linkText: "", linkUrl: "" }, c.announcement || {});
+    c.marquee = Array.isArray(c.marquee) ? c.marquee : [];
+    c.picks = Array.isArray(c.picks) ? c.picks : [];
+    c.menu = Array.isArray(c.menu) ? c.menu : [];
+    c.copy = c.copy && typeof c.copy === "object" ? c.copy : {};
+    COPY_SCHEMA.forEach(function (pg) { if (!c.copy[pg.id] || typeof c.copy[pg.id] !== "object") c.copy[pg.id] = {}; });
+    var taken = {}, secTaken = {};
+    c.menu.forEach(function (sec) {
+      sec.title = sec.title || "Untitled section";
+      sec.id = uniqueId(slug(sec.id || sec.title), secTaken); secTaken[sec.id] = 1;
+      sec.items = Array.isArray(sec.items) ? sec.items : [];
+      sec.items.forEach(function (it) {
+        it.name = it.name || "";
+        if (typeof it.description !== "string") it.description = "";
+        it.image = it.image || "";
+        it.hidden = !!it.hidden;
+        it.id = it.id && !taken[it.id] ? it.id : uniqueId(slug(it.name), taken);
+        taken[it.id] = 1;
+      });
+    });
+    c.picks.forEach(function (p) {
+      p.id = p.id || slug(p.tab);
+      p.items = (Array.isArray(p.items) ? p.items : []).filter(function (id) { return taken[id]; });
+      ["tab", "sticker", "icon", "noteTitle", "noteText"].forEach(function (k) { if (typeof p[k] !== "string") p[k] = ""; });
+    });
+    return c;
+  }
+  function itemById(id) {
+    for (var i = 0; i < state.cfg.menu.length; i++) {
+      var sec = state.cfg.menu[i];
+      for (var j = 0; j < sec.items.length; j++) if (sec.items[j].id === id) return { item: sec.items[j], sec: sec, si: i, ii: j };
+    }
+    return null;
+  }
+  function allItemIds() { var t = {}; state.cfg.menu.forEach(function (s) { s.items.forEach(function (it) { t[it.id] = 1; }); }); return t; }
+
+  /* =========================================================
+     State changes, undo, drafts
+     ========================================================= */
+  function isDirty() { return !!state.cfg && JSON.stringify(state.cfg) !== state.baseline; }
+  function mutate(fn, key) {
+    var now = Date.now();
+    if (!(key && key === state.lastKey && now - state.lastAt < 2500)) {
+      state.undo.push(JSON.stringify(state.cfg));
+      if (state.undo.length > 100) state.undo.shift();
+    }
+    state.lastKey = key || null; state.lastAt = now;
+    fn(state.cfg);
+    changed();
+  }
+  function changed() {
+    updateStatus();
+    $("#btn-undo").disabled = !state.undo.length;
+    clearTimeout(changed.t);
+    changed.t = setTimeout(function () { saveDraft(); refreshPreview(); }, 500);
+  }
+  function undo() {
+    if (!state.undo.length) return;
+    state.cfg = JSON.parse(state.undo.pop());
+    state.lastKey = null;
+    render(); changed(); toast("Undone");
+  }
+  function saveDraft() {
+    try {
+      if (isDirty()) localStorage.setItem(DRAFT_KEY, JSON.stringify({ cfg: state.cfg, at: new Date().toISOString(), newPhotos: pendingList() }));
+      else localStorage.removeItem(DRAFT_KEY);
+    } catch (e) {}
+  }
+  function readDraft() { try { return JSON.parse(localStorage.getItem(DRAFT_KEY) || "null"); } catch (e) { return null; } }
+  function clearDraft() { try { localStorage.removeItem(DRAFT_KEY); } catch (e) {} }
+
+  function load(cfg, source, opts) {
+    state.cfg = normalize(clone(cfg));
+    state.baseline = JSON.stringify(state.cfg);
+    state.source = source;
+    state.undo = []; state.lastKey = null;
+    $("#layout").hidden = false; $("#empty").hidden = true;
+    ["#btn-download", "#btn-preview"].forEach(function (s) { $(s).disabled = false; });
+    render(); changed();
+    if (!(opts && opts.skipDraft)) offerDraft();
+  }
+  function markSaved(how) {
+    state.baseline = JSON.stringify(state.cfg);
+    state.savedAt = how + " at " + timeNow();
+    clearDraft(); updateStatus();
+  }
+  function updateStatus() {
+    var el = $("#status"), dirty = isDirty();
+    el.classList.toggle("dirty", dirty);
+    var src = state.source;
+    var msg = dirty ? "Unsaved changes" : (state.savedAt ? "Saved · " + state.savedAt : "No changes yet");
+    $("span", el).textContent = (src ? src + " · " : "") + msg;
+  }
+
+  function offerDraft() {
+    var d = readDraft();
+    if (!d || !d.cfg || JSON.stringify(normalize(clone(d.cfg))) === state.baseline) return;
+    var when = new Date(d.at);
+    showBanner('<p><b>You have unsaved edits from ' + esc(when.toLocaleString()) + '.</b> Want to pick up where you left off?</p>' +
+      '<button class="btn small" data-banner="restore" type="button">Restore my edits</button>' +
+      '<button class="btn outline small" data-banner="discard" type="button">Discard them</button>', function (act) {
+      if (act === "restore") {
+        mutate(function () {}, null);
+        state.cfg = normalize(clone(d.cfg));
+        render(); changed(); toast("Edits restored");
+        lostPhotosNotice(d);
+      } else { clearDraft(); }
+    });
+  }
+  function showBanner(html, onClick) {
+    var b = $("#banner");
+    b.innerHTML = "<div>" + html + "</div>"; b.hidden = false;
+    b.onclick = function (e) {
+      var btn = e.target.closest("[data-banner]");
+      if (!btn) return;
+      b.hidden = true;
+      if (onClick) onClick(btn.getAttribute("data-banner"));
+    };
+  }
+
+  /* =========================================================
+     Rendering the panels
+     ========================================================= */
+  function render() {
+    $$(".tab").forEach(function (t) { t.setAttribute("aria-selected", t.getAttribute("data-tab") === state.tab ? "true" : "false"); });
+    var fn = { menu: renderMenu, text: renderText, hours: renderHours, highlights: renderHighlights, announcement: renderAnnouncement,
+      contact: renderContact, advanced: renderAdvanced, help: renderHelp }[state.tab];
+    $("#panel").innerHTML = fn();
+    loadThumbs();
+    refreshLive();
+  }
+  function head(title, text, extra) {
+    return '<div class="panel-head"><h1>' + title + "</h1><p>" + text + "</p>" + (extra ? '<div class="row">' + extra + "</div>" : "") + "</div>";
+  }
+  function field(label, path, opts) {
+    opts = opts || {};
+    var v = getPath(state.cfg, path);
+    var input = opts.textarea ?
+      '<textarea data-path="' + path + '"' + (opts.live ? " data-live" : "") + ' placeholder="' + esc(opts.ph || "") + '">' + esc(v) + "</textarea>" :
+      '<input type="' + (opts.type || "text") + '" data-path="' + path + '"' + (opts.live ? " data-live" : "") +
+        ' value="' + esc(v) + '" placeholder="' + esc(opts.ph || "") + '"' + (opts.list ? ' list="' + opts.list + '"' : "") + ">";
+    if (opts.test) input = '<div class="input-link">' + input + '<a class="btn outline small" data-test="' + path + '" href="' + esc(isUrl(v) ? v : "#") + '" target="_blank" rel="noopener">Test ↗</a></div>';
+    return '<label class="field"><span>' + label + "</span>" + input + (opts.help ? "<small>" + opts.help + "</small>" : "") + "</label>";
+  }
+
+  /* ---------- Menu ---------- */
+  function stickerOf(id) {
+    for (var i = 0; i < state.cfg.picks.length; i++) if (state.cfg.picks[i].items.indexOf(id) >= 0) return state.cfg.picks[i].id;
+    return "";
+  }
+  function renderMenu() {
+    var c = state.cfg, total = 0, shown = 0;
+    c.menu.forEach(function (s) { s.items.forEach(function (it) { total++; if (!it.hidden) shown++; }); });
+    var html = head("Menu", shown + " of " + total + " items are showing on the website. Click a photo to change it, add a short description under each name, untick <b>Show on website</b> to hide an item without deleting it (handy when something is sold out), and use the arrows to reorder.",
+      '<button class="btn small" data-action="add-section" type="button">+ Add section</button>' +
+      '<button class="btn outline small" data-action="collapse-all" type="button">Collapse all</button>' +
+      '<button class="btn outline small" data-action="expand-all" type="button">Expand all</button>');
+    c.menu.forEach(function (sec, si) {
+      var collapsed = !!state.collapsed[sec.id];
+      var hiddenN = sec.items.filter(function (it) { return it.hidden; }).length;
+      html += '<section class="card sec' + (collapsed ? " collapsed" : "") + '">' +
+        '<div class="sec-head">' +
+          '<button class="icon-btn collapse-btn" data-action="toggle-sec" data-si="' + si + '" type="button" aria-label="Show or hide items" aria-expanded="' + !collapsed + '">▾</button>' +
+          '<input type="text" class="sec-title" data-path="menu.' + si + '.title" value="' + esc(sec.title) + '" aria-label="Section name">' +
+          '<span class="pill">' + sec.items.length + " item" + (sec.items.length === 1 ? "" : "s") + (hiddenN ? " · " + hiddenN + " hidden" : "") + "</span>" +
+          '<div class="sec-tools">' +
+            '<button class="icon-btn" data-action="sec-up" data-si="' + si + '" type="button" aria-label="Move section up"' + (si === 0 ? " disabled" : "") + ">↑</button>" +
+            '<button class="icon-btn" data-action="sec-down" data-si="' + si + '" type="button" aria-label="Move section down"' + (si === c.menu.length - 1 ? " disabled" : "") + ">↓</button>" +
+            '<button class="icon-btn del" data-action="sec-del" data-si="' + si + '" type="button" aria-label="Delete section">🗑</button>' +
+          "</div></div>" +
+        '<div class="items"' + (collapsed ? " hidden" : "") + ">";
+      sec.items.forEach(function (it, ii) {
+        var stick = stickerOf(it.id);
+        var stickOpts = '<option value="">None</option>' + c.picks.map(function (p) {
+          return '<option value="' + esc(p.id) + '"' + (p.id === stick ? " selected" : "") + ">" + esc(p.icon + " " + (p.sticker || p.tab)) + "</option>";
+        }).join("");
+        var moveOpts = '<option value="" selected>Move to…</option>' + c.menu.map(function (s2, k) {
+          return k === si ? "" : '<option value="' + k + '">' + esc(s2.title) + "</option>";
+        }).join("");
+        var pending = it.image && state.pending[it.image];
+        html += '<div class="item' + (it.hidden ? " is-hidden" : "") + '">' +
+          '<button class="thumb" data-action="photo" data-si="' + si + '" data-ii="' + ii + '" type="button" title="Change photo">' +
+            (it.image ? '<img data-img="' + esc(it.image) + '" alt="">' : '<span class="no-photo">Add photo</span>') +
+            '<span class="chg">Change</span></button>' +
+          '<div class="item-main">' +
+            '<input type="text" class="item-name" data-path="menu.' + si + ".items." + ii + '.name" value="' + esc(it.name) + '" placeholder="Item name" aria-label="Item name">' +
+            '<textarea class="item-desc" rows="2" data-path="menu.' + si + ".items." + ii + '.description" placeholder="Short description (optional) — shown under the name on the menu" aria-label="Description">' + esc(it.description) + "</textarea>" +
+            '<div class="item-meta">' +
+              '<label class="switch"><input type="checkbox" data-path="menu.' + si + ".items." + ii + '.hidden" data-invert' + (it.hidden ? "" : " checked") + "> Show on website</label>" +
+              '<label>Sticker <select data-change="sticker" data-id="' + esc(it.id) + '" aria-label="Sticker">' + stickOpts + "</select></label>" +
+              (!it.name.trim() ? '<span class="err">Needs a name</span>' : "") +
+              (!it.image ? '<span class="pill warn">No photo yet</span>' : '<span class="path" title="Photo file">' + esc(it.image) + "</span>") +
+              (pending ? '<span class="note">New photo · ' + "included when you download" + "</span>" : "") +
+            "</div></div>" +
+          '<div class="item-tools">' +
+            '<button class="icon-btn" data-action="item-up" data-si="' + si + '" data-ii="' + ii + '" type="button" aria-label="Move up"' + (ii === 0 ? " disabled" : "") + ">↑</button>" +
+            '<button class="icon-btn" data-action="item-down" data-si="' + si + '" data-ii="' + ii + '" type="button" aria-label="Move down"' + (ii === sec.items.length - 1 ? " disabled" : "") + ">↓</button>" +
+            (c.menu.length > 1 ? '<select data-change="move" data-si="' + si + '" data-ii="' + ii + '" aria-label="Move to another section" title="Move to another section">' + moveOpts + "</select>" : "") +
+            '<button class="icon-btn del" data-action="item-del" data-si="' + si + '" data-ii="' + ii + '" type="button" aria-label="Delete item">🗑</button>' +
+          "</div></div>";
+      });
+      html += '<div class="add-row"><button class="btn outline small" data-action="add-item" data-si="' + si + '" type="button">+ Add item to ' + esc(sec.title) + "</button></div></div></section>";
+    });
+    if (!c.menu.length) html += '<div class="card"><p class="muted" style="margin:0">No sections yet. Add one to start your menu.</p></div>';
+    return html;
+  }
+
+  /* ---------- Page text ---------- */
+  var HAS_MARKS = /\*|\(\(|__|\[|\{|\n/;
+  function textField(pageId, f) {
+    var path = "copy." + pageId + "." + f.k, v = getPath(state.cfg, path);
+    var ph = v === undefined ? "Uses the text built into the page" : "";
+    var input = f.type === "text" ?
+      '<textarea rows="3" data-path="' + path + '" placeholder="' + ph + '">' + esc(v || "") + "</textarea>" :
+      '<input type="text" data-path="' + path + '" value="' + esc(v || "") + '" placeholder="' + ph + '">';
+    return '<label class="field"><span>' + esc(f.label) + "</span>" + input +
+      '<div class="fmt-prev" data-prev="' + path + '"' + (HAS_MARKS.test(v || "") ? "" : " hidden") + "></div></label>";
+  }
+  function listField(pageId, f) {
+    var path = "copy." + pageId + "." + f.k, list = getPath(state.cfg, path);
+    var html = '<div class="field"><span>' + esc(f.label) + '</span><div class="list">';
+    (Array.isArray(list) ? list : []).forEach(function (t, k) {
+      html += '<div class="list-row"><input type="text" class="grow" data-path="' + path + "." + k + '" value="' + esc(t) + '" aria-label="' + esc(f.label) + " " + (k + 1) + '">' +
+        '<button class="icon-btn" data-action="list-up" data-list="' + path + '" data-k="' + k + '" type="button" aria-label="Move up"' + (k === 0 ? " disabled" : "") + ">↑</button>" +
+        '<button class="icon-btn" data-action="list-down" data-list="' + path + '" data-k="' + k + '" type="button" aria-label="Move down"' + (k === list.length - 1 ? " disabled" : "") + ">↓</button>" +
+        '<button class="icon-btn del" data-action="list-del" data-list="' + path + '" data-k="' + k + '" type="button" aria-label="Remove">✕</button></div>';
+    });
+    return html + '</div><div><button class="btn outline small" data-action="list-add" data-list="' + path + '" type="button">+ Add</button></div></div>';
+  }
+  function faqField(pageId, f) {
+    var path = "copy." + pageId + "." + f.k, list = getPath(state.cfg, path);
+    list = Array.isArray(list) ? list : [];
+    var html = '<div class="field"><span>' + esc(f.label) + '</span><small>The first question shows open. Use <code>{hours}</code> in an answer to show your opening hours automatically.</small><div class="list">';
+    list.forEach(function (qa, k) {
+      html += '<div class="faq-row"><div class="qa">' +
+        '<input type="text" data-path="' + path + "." + k + '.q" value="' + esc(qa.q) + '" placeholder="Question" aria-label="Question ' + (k + 1) + '">' +
+        '<textarea rows="2" data-path="' + path + "." + k + '.a" placeholder="Answer" aria-label="Answer ' + (k + 1) + '">' + esc(qa.a) + "</textarea>" +
+        '<div class="fmt-prev" data-prev="' + path + "." + k + '.a"' + (HAS_MARKS.test(qa.a || "") ? "" : " hidden") + "></div></div>" +
+        '<div class="tools"><button class="icon-btn" data-action="list-up" data-list="' + path + '" data-k="' + k + '" type="button" aria-label="Move up"' + (k === 0 ? " disabled" : "") + ">↑</button>" +
+        '<button class="icon-btn" data-action="list-down" data-list="' + path + '" data-k="' + k + '" type="button" aria-label="Move down"' + (k === list.length - 1 ? " disabled" : "") + ">↓</button>" +
+        '<button class="icon-btn del" data-action="list-del" data-list="' + path + '" data-k="' + k + '" type="button" aria-label="Remove question">✕</button></div></div>';
+    });
+    return html + '</div><div><button class="btn outline small" data-action="faq-add" data-list="' + path + '" type="button">+ Add a question</button></div></div>';
+  }
+  function renderText() {
+    var cur = COPY_SCHEMA.filter(function (p) { return p.id === state.textPage; })[0] || COPY_SCHEMA[0];
+    var html = head("Page text", "Every headline, paragraph, list, and question on the website. Changes show on the site once you download config.js and upload it to your host.");
+    html += '<div class="page-pills" role="group" aria-label="Page">' + COPY_SCHEMA.map(function (p) {
+      return '<button type="button" data-action="text-page" data-page="' + p.id + '" aria-pressed="' + (p.id === cur.id) + '">' + esc(p.title) + "</button>";
+    }).join("") + "</div>";
+    html += '<details class="card fmt-help"><summary>How to style text (handwriting, circles, links…)</summary><table>' +
+      "<tr><td><code>*text*</code></td><td>Handwritten accent: <span class=\"hand\">one tap away.</span></td></tr>" +
+      "<tr><td><code>((text))</code></td><td>Hand-drawn circle: <span class=\"oval\">love</span></td></tr>" +
+      "<tr><td><code>__text__</code></td><td>Squiggly underline: <span class=\"scribble-u\">coffee</span></td></tr>" +
+      "<tr><td><code>**text**</code></td><td><b>Bold</b></td></tr>" +
+      "<tr><td><code>[text](address)</code></td><td>A link, e.g. <code>[our menu](menu.html)</code> or <code>[Messenger]({messenger})</code></td></tr>" +
+      "<tr><td><code>{count}</code></td><td>Number of items on the menu (updates by itself)</td></tr>" +
+      "<tr><td><code>{hours}</code></td><td>Your opening hours as a sentence</td></tr>" +
+      "<tr><td>New line</td><td>In a paragraph box, pressing Enter makes a line break on the site</td></tr>" +
+      "<tr><td>Empty box</td><td>Leaving a box empty hides that text on the site</td></tr></table></details>";
+    cur.groups.forEach(function (g) {
+      html += '<div class="card"><h2>' + esc(g.title) + '</h2><div class="fields" style="margin-top:10px">' + g.fields.map(function (f) {
+        return f.type === "list" ? listField(cur.id, f) : f.type === "faq" ? faqField(cur.id, f) : textField(cur.id, f);
+      }).join("") + "</div></div>";
+    });
+    return html;
+  }
+  function refreshPrev(path) {
+    var box = document.querySelector('[data-prev="' + path + '"]');
+    if (!box) return;
+    var v = getPath(state.cfg, path) || "";
+    box.hidden = !HAS_MARKS.test(v);
+    if (!box.hidden) box.innerHTML = fmtText(v, fmtCtx());
+  }
+
+  /* ---------- Hours ---------- */
+  function rangeErrors(list) {
+    var out = [];
+    list.forEach(function (r, i) {
+      var a = toHour(r[0]), b = toHour(r[1]);
+      if (isNaN(a) || isNaN(b)) out.push("Time " + (i + 1) + " is incomplete.");
+      else if (a >= b) out.push("Closing time must be after opening time (for hours past midnight, add the rest to the next day).");
+    });
+    var sorted = list.filter(function (r) { return toHour(r[0]) < toHour(r[1]); }).slice().sort(function (x, y) { return toHour(x[0]) - toHour(y[0]); });
+    for (var k = 1; k < sorted.length; k++) if (toHour(sorted[k][0]) < toHour(sorted[k - 1][1])) out.push("Two time ranges overlap.");
+    return out;
+  }
+  function renderHours() {
+    var c = state.cfg;
+    var html = head("Opening hours", "These hours show in the footer of every page, on the Contact page, in the Order page FAQ, in Google's business details, and power the live “Open now / Closed” badge (Manila time).");
+    html += '<div class="card">';
+    DAYS.forEach(function (d, di) {
+      var list = c.hours[d], mode = !list.length ? "closed" : (list.length === 1 && list[0][0] === "00:00" && list[0][1] === "24:00") ? "24h" : "set";
+      html += '<div class="day"><div class="day-name">' + DAY_NAME[d] + "</div>" +
+        '<select data-change="day-mode" data-day="' + d + '" aria-label="' + DAY_NAME[d] + ' status">' +
+          '<option value="set"' + (mode === "set" ? " selected" : "") + ">Open — set hours</option>" +
+          '<option value="24h"' + (mode === "24h" ? " selected" : "") + ">Open 24 hours</option>" +
+          '<option value="closed"' + (mode === "closed" ? " selected" : "") + ">Closed</option></select><div class=\"ranges\">";
+      if (mode === "set") {
+        list.forEach(function (r, ri) {
+          html += '<div class="range"><input type="time" step="900" data-path="hours.' + d + "." + ri + '.0" data-live value="' + esc(r[0]) + '" aria-label="Opens">' +
+            '<span class="muted">to</span><input type="time" step="900" data-path="hours.' + d + "." + ri + '.1" data-kind="close" data-live value="' + esc(r[1] === "24:00" ? "00:00" : r[1]) + '" aria-label="Closes">' +
+            (r[1] === "24:00" ? '<span class="muted" style="font-size:12.5px">(midnight)</span>' : "") +
+            '<button class="icon-btn del" data-action="range-del" data-day="' + d + '" data-ri="' + ri + '" type="button" aria-label="Remove time range">✕</button></div>';
+        });
+        html += '<div class="day-tools"><button class="btn outline small" data-action="range-add" data-day="' + d + '" type="button">+ Add another time range</button>';
+      } else {
+        html += '<div class="day-tools">';
+      }
+      if (di > 0) html += '<button class="btn outline small" data-action="copy-prev" data-day="' + d + '" type="button">Same as ' + DAY_NAME[DAYS[di - 1]] + "</button>";
+      html += '</div><div class="err" data-day-err="' + d + '"></div></div></div>';
+    });
+    html += '<p class="muted" style="margin:10px 0 0;font-size:13px">Tip: a closing time of 12:00 AM means midnight (shows as 11:59pm on the site).</p></div>';
+    html += '<div class="card"><h2>Extra line on the Order page</h2><p class="hint">Shown after the hours in “When can I order?”. Leave empty to show just the hours.</p>' +
+      field("", "hoursNote", { textarea: true, live: true, ph: "e.g. Yes, we're open all night for your late cravings." }) + "</div>";
+    html += '<div class="card"><h2>How it will look</h2><p class="hint">Updates as you type.</p><div class="preview-box"><table id="hours-prev"></table><p id="hours-sentence"></p></div></div>';
+    return html;
+  }
+
+  /* ---------- Highlights ---------- */
+  function renderHighlights() {
+    var c = state.cfg;
+    var html = head("Home highlights", "The tabs in the “Le Bean picks” section on the home page, the stickers on menu items, and the scrolling drink names under the hero.",
+      '<button class="btn small" data-action="pick-add" type="button">+ Add a picks group</button>');
+    var allOpts = function (pi) {
+      var out = '<option value="">+ Add an item…</option>';
+      c.menu.forEach(function (sec) {
+        out += '<optgroup label="' + esc(sec.title) + '">';
+        sec.items.forEach(function (it) {
+          if (c.picks[pi].items.indexOf(it.id) < 0) out += '<option value="' + esc(it.id) + '">' + esc(it.name || "(no name)") + (it.hidden ? " (hidden)" : "") + "</option>";
+        });
+        out += "</optgroup>";
+      });
+      return out;
+    };
+    c.picks.forEach(function (p, pi) {
+      html += '<div class="card"><div class="row" style="justify-content:space-between;margin-bottom:12px"><h2>' + esc(p.icon) + " " + esc(p.tab || "Untitled group") + "</h2>" +
+        '<div class="row"><button class="icon-btn" data-action="pick-up" data-pi="' + pi + '" type="button" aria-label="Move group up"' + (pi === 0 ? " disabled" : "") + ">↑</button>" +
+        '<button class="icon-btn" data-action="pick-down" data-pi="' + pi + '" type="button" aria-label="Move group down"' + (pi === c.picks.length - 1 ? " disabled" : "") + ">↓</button>" +
+        '<button class="btn danger small" data-action="pick-del" data-pi="' + pi + '" type="button">Delete group</button></div></div>' +
+        '<div class="grid2">' +
+          field("Tab name", "picks." + pi + ".tab", { help: "Home page tab and menu filter, e.g. “Top picks”." }) +
+          field("Sticker text", "picks." + pi + ".sticker", { help: "Small label on the item photo, e.g. “Top pick”." }) +
+          field("Icon", "picks." + pi + ".icon", { help: "One symbol or emoji, e.g. ★ ♥ ☕ 🔥" }) +
+          field("Note title", "picks." + pi + ".noteTitle", { help: "Big handwritten title on the brown note card." }) +
+        "</div><div style=\"margin-top:12px\">" + field("Note text", "picks." + pi + ".noteText", { textarea: true }) + "</div>" +
+        '<h2 style="margin-top:16px">Items in this group <span class="pill">' + p.items.length + "</span></h2>" +
+        '<p class="hint" style="margin:0 0 8px;color:var(--muted);font-size:13.5px">Shown in this order on the home page. Items here also get this sticker on the menu.</p><div class="list">';
+      p.items.forEach(function (id, k) {
+        var f = itemById(id);
+        if (!f) return;
+        html += '<div class="list-row">' + (f.item.image ? '<img data-img="' + esc(f.item.image) + '" alt="">' : "") +
+          '<span class="grow"><b>' + esc(f.item.name) + '</b> <span class="muted" style="font-size:12.5px">· ' + esc(f.sec.title) + (f.item.hidden ? " · hidden on site" : "") + "</span></span>" +
+          '<button class="icon-btn" data-action="pickitem-up" data-pi="' + pi + '" data-k="' + k + '" type="button" aria-label="Move up"' + (k === 0 ? " disabled" : "") + ">↑</button>" +
+          '<button class="icon-btn" data-action="pickitem-down" data-pi="' + pi + '" data-k="' + k + '" type="button" aria-label="Move down"' + (k === p.items.length - 1 ? " disabled" : "") + ">↓</button>" +
+          '<button class="icon-btn del" data-action="pickitem-del" data-pi="' + pi + '" data-k="' + k + '" type="button" aria-label="Remove from group">✕</button></div>';
+      });
+      html += '</div><div style="margin-top:8px;max-width:340px"><select data-change="pick-additem" data-pi="' + pi + '" aria-label="Add an item">' + allOpts(pi) + "</select></div></div>";
+    });
+    html += '<div class="card"><h2>Scrolling drink names</h2><p class="hint">The moving strip under the home page hero. Any text works.</p><div class="list">';
+    c.marquee.forEach(function (t, k) {
+      html += '<div class="list-row"><input type="text" class="grow" data-path="marquee.' + k + '" value="' + esc(t) + '" aria-label="Scrolling text ' + (k + 1) + '">' +
+        '<button class="icon-btn" data-action="mq-up" data-k="' + k + '" type="button" aria-label="Move up"' + (k === 0 ? " disabled" : "") + ">↑</button>" +
+        '<button class="icon-btn" data-action="mq-down" data-k="' + k + '" type="button" aria-label="Move down"' + (k === c.marquee.length - 1 ? " disabled" : "") + ">↓</button>" +
+        '<button class="icon-btn del" data-action="mq-del" data-k="' + k + '" type="button" aria-label="Remove">✕</button></div>';
+    });
+    html += '</div><div style="margin-top:8px"><button class="btn outline small" data-action="mq-add" type="button">+ Add text</button></div></div>';
+    return html;
+  }
+
+  /* ---------- Announcement ---------- */
+  function renderAnnouncement() {
+    var a = state.cfg.announcement;
+    var opts = PAGES.map(function (p) { return '<option value="' + p[0] + '">' + p[1] + "</option>"; }).join("");
+    return head("Announcement bar", "A slim bar at the very top of every page — for holiday closures, new drinks, or promos. Turn it off when you don't need it.") +
+      '<div class="card"><label class="switch" style="font-size:15px;font-weight:600"><input type="checkbox" data-path="announcement.enabled" data-live' + (a.enabled ? " checked" : "") + "> Show the announcement bar</label>" +
+      '<div style="margin-top:14px;display:grid;gap:12px">' +
+        field("Message", "announcement.text", { live: true, ph: "e.g. We're closed on Dec 25 — Merry Christmas!" }) +
+        '<div class="grid2">' + field("Link text (optional)", "announcement.linkText", { live: true, ph: "e.g. See our hours" }) +
+        '<label class="field"><span>Link goes to</span><input type="text" data-path="announcement.linkUrl" data-live list="page-list" value="' + esc(a.linkUrl) + '" placeholder="Pick a page or paste a web address"><small>Choose from the list or paste a full link (https://…).</small></label></div>' +
+      '</div><datalist id="page-list">' + opts + "</datalist></div>" +
+      '<div class="card"><h2>How it will look</h2><p class="hint" id="ann-state"></p><div class="announce-prev" id="ann-prev"></div></div>';
+  }
+
+  /* ---------- Contact & links ---------- */
+  function renderContact() {
+    return head("Contact & links", "Links are used on every button across the site (all “Order via Grab” buttons, social icons, and Messenger buttons). Use “Test” to check a link opens the right page.") +
+      '<div class="card"><h2>Links</h2><p class="hint">Full web addresses starting with https://</p><div class="grid2">' +
+        field("GrabFood store", "links.grab", { type: "url", test: true }) +
+        field("Messenger", "links.messenger", { type: "url", test: true, help: "Usually https://m.me/ followed by your page name." }) +
+        field("Facebook page", "links.facebook", { type: "url", test: true, help: "Also used for the Facebook feed on the Contact page." }) +
+        field("Instagram", "links.instagram", { type: "url", test: true }) +
+        field("TikTok", "links.tiktok", { type: "url", test: true }) +
+      "</div></div>" +
+      '<div class="card"><h2>Names shown on the Contact page</h2><div class="grid2">' +
+        field("Facebook", "handles.facebook", { ph: "facebook.com/lebeandvo" }) +
+        field("Instagram", "handles.instagram", { ph: "@lebean.dvo" }) +
+        field("TikTok", "handles.tiktok", { ph: "@lebean.dvo" }) +
+      "</div></div>" +
+      '<div class="card"><h2>Address</h2><p class="hint">Where you deliver from. Shown under “Based in” in the footer and on the Contact page, and given to Google.</p><div class="grid2">' +
+        field("Street / building", "address.street", { live: true }) + field("Barangay / area", "address.area", { live: true }) +
+        field("City", "address.city", { live: true }) + field("Province / region", "address.region", { live: true, help: "Only used for Google's business details." }) +
+        field("Country", "address.country", { live: true }) +
+      '</div><div class="preview-box" style="margin-top:14px"><span class="muted" style="color:rgba(243,237,181,.6);font-size:12px">ON THE WEBSITE</span><div id="addr-prev" style="margin-top:4px"></div></div></div>';
+  }
+
+  /* ---------- Advanced ---------- */
+  function renderAdvanced() {
+    return head("Advanced: edit the raw settings", "Every setting as text (JSON). Only use this if you're comfortable — the other tabs are safer. Click <b>Apply</b> to use your changes; mistakes are caught before anything is applied.",
+      '<button class="btn small" data-action="json-apply" type="button">Apply</button><button class="btn outline small" data-action="json-reset" type="button">Reset this box</button>') +
+      '<div class="card"><textarea class="code" id="json-box" spellcheck="false" aria-label="Raw settings">' + esc(JSON.stringify(state.cfg, null, 2)) + '</textarea><div class="err" id="json-err" style="margin-top:8px"></div></div>';
+  }
+
+  /* ---------- Help ---------- */
+  function renderHelp() {
+    return head("How to publish your changes", "This editor changes <b>config.js</b>, the settings file your website reads. Your live website updates once the new config.js (and any new photos) are uploaded to your web host.") +
+      '<div class="card help"><h2>Three steps</h2><ol class="steps">' +
+        "<li><b>Upload</b> your current config.js (it's in your website folder, next to index.html). Always start from your latest version.</li>" +
+        "<li><b>Edit</b> anything — menu, page text, hours, highlights, announcement, links. Use <b>Preview</b> to check how it looks.</li>" +
+        "<li><b>Download</b>. You get config.js — or, if you added new photos, <b>le-bean-update.zip</b> with config.js and the photos already in the right folders. Put the file(s) into your website folder (replacing the old config.js), then upload them to your web host.</li></ol></div>" +
+      '<div class="card help"><h2>Good to know</h2><ul class="steps">' +
+        "<li>Works in any browser, on a computer or phone.</li>" +
+        "<li>Your edits are kept in this browser as a draft until you download, so closing the tab by accident won't lose them (new photos need to be added again after closing, though).</li>" +
+        "<li><kbd>Ctrl</kbd>/<kbd>⌘</kbd> + <kbd>Z</kbd> undoes your last change. <kbd>Ctrl</kbd>/<kbd>⌘</kbd> + <kbd>S</kbd> downloads.</li>" +
+        "<li>New photos are resized automatically so the site stays fast. Square photos on a white background match the current menu best.</li>" +
+        "<li>Preview and photo thumbnails work when admin.html sits in your website folder.</li>" +
+        "<li>Page titles shown in Google and on share previews are set in the .html pages, not here.</li>" +
+        "<li>Anyone can open admin.html, but it can't change your live site by itself — only uploading files to your host does. If you'd rather not upload it, keep it only on your computer.</li></ul></div>";
+  }
+
+  /* ---------- live bits (hours preview, address, announcement) ---------- */
+  function refreshLive() {
+    var c = state.cfg;
+    var hp = $("#hours-prev");
+    if (hp) {
+      hp.innerHTML = hoursTable(c);
+      $("#hours-sentence").textContent = "On the Order page: “" + hoursSentence(c) + (c.hoursNote ? " " + c.hoursNote : "") + "”";
+      DAYS.forEach(function (d) {
+        var e = $('[data-day-err="' + d + '"]');
+        if (e) e.textContent = rangeErrors(c.hours[d]).join(" ");
+      });
+    }
+    var ap = $("#addr-prev");
+    if (ap) {
+      var a = c.address;
+      ap.innerHTML = [[a.street, a.area], [a.city, a.country]].map(function (p) { return esc(p.filter(Boolean).join(", ")); }).filter(Boolean).join("<br>");
+    }
+    var an = $("#ann-prev");
+    if (an) {
+      var x = c.announcement;
+      an.innerHTML = esc(x.text || "Your message will appear here") + (x.linkText ? ' <u>' + esc(x.linkText) + " →</u>" : "");
+      an.style.opacity = x.enabled && x.text ? 1 : 0.45;
+      $("#ann-state").textContent = !x.enabled ? "Currently OFF — visitors won't see it." : !x.text ? "Add a message to show the bar." : "Currently ON — visitors will see this at the top of every page.";
+    }
+    $$("[data-test]").forEach(function (a) { var v = getPath(c, a.getAttribute("data-test")); a.href = isUrl(v) ? v : "#"; });
+    $$("[data-prev]").forEach(function (b) { refreshPrev(b.getAttribute("data-prev")); });
+  }
+
+  /* ---------- thumbnails ---------- */
+  function resolveImage(path) {
+    if (state.blobUrls[path]) return Promise.resolve(state.blobUrls[path]);
+    if (state.pending[path]) { state.blobUrls[path] = URL.createObjectURL(state.pending[path]); return Promise.resolve(state.blobUrls[path]); }
+    return Promise.resolve(path);
+  }
+  function loadThumbs() {
+    $$("img[data-img]").forEach(function (img) {
+      var p = img.getAttribute("data-img");
+      img.onerror = function () {
+        img.onerror = null;
+        var s = document.createElement("span"); s.className = "no-photo"; s.textContent = "No preview";
+        img.replaceWith(s);
+      };
+      resolveImage(p).then(function (u) { img.src = u; });
+    });
+  }
+
+  /* =========================================================
+     Events
+     ========================================================= */
+  var panel = $("#panel");
+  function onField(e) {
+    var el = e.target, path = el.getAttribute && el.getAttribute("data-path");
+    if (!path) return;
+    var v = el.type === "checkbox" ? (el.hasAttribute("data-invert") ? !el.checked : el.checked) : el.value;
+    if (el.getAttribute("data-kind") === "close" && v === "00:00") v = "24:00";
+    mutate(function (c) { setPath(c, path, v); }, path);
+    if (/^copy\./.test(path)) { refreshPrev(path); el.placeholder = ""; }
+    if (el.hasAttribute("data-live")) refreshLive();
+    if (el.type === "checkbox" && /\.hidden$/.test(path)) { var row = el.closest(".item"); if (row) row.classList.toggle("is-hidden", !!v); }
+    if (/^links\./.test(path)) refreshLive();
+  }
+  panel.addEventListener("input", function (e) { if (e.target.type !== "checkbox" && e.target.tagName !== "SELECT") onField(e); });
+  panel.addEventListener("change", function (e) {
+    var el = e.target;
+    if (el.type === "checkbox" || (el.tagName === "SELECT" && el.hasAttribute("data-path"))) return onField(e);
+    var act = el.getAttribute("data-change");
+    if (!act) return;
+    var c = state.cfg;
+    if (act === "sticker") {
+      var id = el.getAttribute("data-id"), to = el.value;
+      mutate(function () {
+        c.picks.forEach(function (p) { p.items = p.items.filter(function (x) { return x !== id; }); });
+        if (to) c.picks.forEach(function (p) { if (p.id === to) p.items.push(id); });
+      });
+      toast(to ? "Added to " + (c.picks.filter(function (p) { return p.id === to; })[0] || {}).tab : "Sticker removed");
+    } else if (act === "move") {
+      var si = +el.getAttribute("data-si"), ii = +el.getAttribute("data-ii"), target = +el.value;
+      if (el.value === "") return;
+      mutate(function () { var it = c.menu[si].items.splice(ii, 1)[0]; c.menu[target].items.push(it); });
+      toast("Moved to " + c.menu[target].title);
+      render();
+    } else if (act === "day-mode") {
+      var d = el.getAttribute("data-day"), m = el.value;
+      mutate(function () { c.hours[d] = m === "closed" ? [] : m === "24h" ? [["00:00", "24:00"]] : [["08:00", "17:00"]]; });
+      render();
+    } else if (act === "pick-additem") {
+      var pi = +el.getAttribute("data-pi");
+      if (!el.value) return;
+      var nid = el.value;
+      mutate(function () { c.picks[pi].items.push(nid); });
+      render();
+    }
+  });
+
+  function move(arr, i, j) { if (j < 0 || j >= arr.length) return; var x = arr.splice(i, 1)[0]; arr.splice(j, 0, x); }
+  panel.addEventListener("click", function (e) {
+    var b = e.target.closest("[data-action]");
+    if (!b) return;
+    var act = b.getAttribute("data-action"), c = state.cfg;
+    var si = +b.getAttribute("data-si"), ii = +b.getAttribute("data-ii"), pi = +b.getAttribute("data-pi"), k = +b.getAttribute("data-k");
+    var d = b.getAttribute("data-day");
+    switch (act) {
+      case "toggle-sec": state.collapsed[c.menu[si].id] = !state.collapsed[c.menu[si].id]; render(); return;
+      case "collapse-all": c.menu.forEach(function (s) { state.collapsed[s.id] = true; }); render(); return;
+      case "expand-all": state.collapsed = {}; render(); return;
+      case "add-section":
+        mutate(function () {
+          var taken = {}; c.menu.forEach(function (s) { taken[s.id] = 1; });
+          c.menu.push({ id: uniqueId("new_section", taken), title: "New section", items: [] });
+        });
+        render();
+        setTimeout(function () { var inputs = $$(".sec-title"); var last = inputs[inputs.length - 1]; if (last) { last.focus(); last.select(); last.scrollIntoView({ block: "center" }); } }, 30);
+        return;
+      case "sec-up": mutate(function () { move(c.menu, si, si - 1); }); break;
+      case "sec-down": mutate(function () { move(c.menu, si, si + 1); }); break;
+      case "sec-del":
+        var sec = c.menu[si];
+        if (!confirm('Delete the section "' + sec.title + '"' + (sec.items.length ? " and its " + sec.items.length + " items" : "") + "?\n\nYou can undo this.")) return;
+        mutate(function () {
+          var ids = sec.items.map(function (it) { return it.id; });
+          c.picks.forEach(function (p) { p.items = p.items.filter(function (x) { return ids.indexOf(x) < 0; }); });
+          c.menu.splice(si, 1);
+        });
+        toast("Section deleted · Undo is at the top");
+        break;
+      case "add-item":
+        mutate(function () {
+          c.menu[si].items.push({ id: uniqueId("new_item", allItemIds()), name: "", description: "", image: "", hidden: false });
+        });
+        state.collapsed[c.menu[si].id] = false;
+        render();
+        setTimeout(function () {
+          var rows = $$(".sec")[si].querySelectorAll(".item-name"); var last = rows[rows.length - 1];
+          if (last) { last.focus(); last.scrollIntoView({ block: "center" }); }
+        }, 30);
+        return;
+      case "item-up": mutate(function () { move(c.menu[si].items, ii, ii - 1); }); break;
+      case "item-down": mutate(function () { move(c.menu[si].items, ii, ii + 1); }); break;
+      case "item-del":
+        var it = c.menu[si].items[ii];
+        if (!confirm('Delete "' + (it.name || "this item") + '" from the menu?\n\nTip: to hide it temporarily (e.g. sold out), untick "Show on website" instead.\nYou can undo this.')) return;
+        mutate(function () {
+          c.picks.forEach(function (p) { p.items = p.items.filter(function (x) { return x !== it.id; }); });
+          c.menu[si].items.splice(ii, 1);
+        });
+        toast("Item deleted · Undo is at the top");
+        break;
+      case "photo":
+        state.photoTarget = { si: si, ii: ii };
+        $("#photo-input").value = "";
+        $("#photo-input").click();
+        return;
+      case "range-add": mutate(function () { c.hours[d].push(["17:00", "21:00"]); }); break;
+      case "range-del": mutate(function () { c.hours[d].splice(+b.getAttribute("data-ri"), 1); }); break;
+      case "copy-prev":
+        var prev = DAYS[DAYS.indexOf(d) - 1];
+        mutate(function () { c.hours[d] = clone(c.hours[prev]); });
+        break;
+      case "pick-add":
+        var tab = prompt("Name for the new picks group (shown as a tab on the home page):", "Staff favourites");
+        if (!tab) return;
+        mutate(function () {
+          var taken = {}; c.picks.forEach(function (p) { taken[p.id] = 1; });
+          c.picks.push({ id: uniqueId(slug(tab), taken), tab: tab, sticker: tab, icon: "☕", noteTitle: tab, noteText: "", items: [] });
+        });
+        break;
+      case "pick-up": mutate(function () { move(c.picks, pi, pi - 1); }); break;
+      case "pick-down": mutate(function () { move(c.picks, pi, pi + 1); }); break;
+      case "pick-del":
+        if (!confirm('Delete the "' + c.picks[pi].tab + '" group? The items stay on the menu; they just lose this sticker.\n\nYou can undo this.')) return;
+        mutate(function () { c.picks.splice(pi, 1); });
+        break;
+      case "pickitem-up": mutate(function () { move(c.picks[pi].items, k, k - 1); }); break;
+      case "pickitem-down": mutate(function () { move(c.picks[pi].items, k, k + 1); }); break;
+      case "pickitem-del": mutate(function () { c.picks[pi].items.splice(k, 1); }); break;
+      case "mq-add": mutate(function () { c.marquee.push(""); }); render(); var ins = $$('[data-path^="marquee."]'); if (ins.length) ins[ins.length - 1].focus(); return;
+      case "mq-up": mutate(function () { move(c.marquee, k, k - 1); }); break;
+      case "mq-down": mutate(function () { move(c.marquee, k, k + 1); }); break;
+      case "mq-del": mutate(function () { c.marquee.splice(k, 1); }); break;
+      case "json-apply":
+        var box = $("#json-box"), err = $("#json-err");
+        try {
+          var parsed = JSON.parse(box.value);
+          if (!parsed || typeof parsed !== "object" || Array.isArray(parsed)) throw new Error("The settings must be one { … } object.");
+          mutate(function () { state.cfg = normalize(parsed); });
+          err.textContent = ""; toast("Applied");
+        } catch (ex) { err.textContent = "Not applied — " + ex.message; return; }
+        break;
+      case "json-reset": break;
+      case "text-page": state.textPage = b.getAttribute("data-page"); render(); return;
+      case "list-add":
+      case "faq-add":
+        var lp = b.getAttribute("data-list");
+        mutate(function () {
+          var arr = getPath(c, lp);
+          if (!Array.isArray(arr)) { arr = []; setPath(c, lp, arr); }
+          arr.push(act === "faq-add" ? { q: "", a: "" } : "");
+        });
+        render();
+        var fresh = $$('[data-path^="' + lp + '."]'); if (fresh.length) fresh[act === "faq-add" ? fresh.length - 2 : fresh.length - 1].focus();
+        return;
+      case "list-up": mutate(function () { move(getPath(c, b.getAttribute("data-list")), k, k - 1); }); break;
+      case "list-down": mutate(function () { move(getPath(c, b.getAttribute("data-list")), k, k + 1); }); break;
+      case "list-del": mutate(function () { getPath(c, b.getAttribute("data-list")).splice(k, 1); }); break;
+      default: return;
+    }
+    render();
+  });
+
+  $$(".tab").forEach(function (t) {
+    t.addEventListener("click", function () { state.tab = t.getAttribute("data-tab"); render(); window.scrollTo(0, 0); });
+  });
+
+  /* ---------- photos: resize in the browser, keep until saved ---------- */
+  function resizeImage(file) {
+    return new Promise(function (resolve) {
+      var url = URL.createObjectURL(file), img = new Image();
+      img.onload = function () {
+        var max = 600, w = img.naturalWidth, h = img.naturalHeight, s = Math.min(1, max / Math.max(w, h));
+        var cv = document.createElement("canvas"); cv.width = Math.round(w * s); cv.height = Math.round(h * s);
+        var ctx = cv.getContext("2d"); ctx.fillStyle = "#fff"; ctx.fillRect(0, 0, cv.width, cv.height);
+        ctx.drawImage(img, 0, 0, cv.width, cv.height);
+        URL.revokeObjectURL(url);
+        cv.toBlob(function (b) {
+          if (b && b.type === "image/webp") return resolve({ blob: b, ext: "webp" });
+          cv.toBlob(function (j) { resolve({ blob: j || file, ext: j ? "jpg" : (file.name.split(".").pop() || "jpg").toLowerCase() }); }, "image/jpeg", 0.85);
+        }, "image/webp", 0.85);
+      };
+      img.onerror = function () { URL.revokeObjectURL(url); resolve({ blob: file, ext: (file.name.split(".").pop() || "jpg").toLowerCase() }); };
+      img.src = url;
+    });
+  }
+  $("#photo-input").addEventListener("change", function (e) {
+    var file = e.target.files && e.target.files[0], t = state.photoTarget;
+    if (!file || !t) return;
+    if (!/^image\//.test(file.type)) { toast("Please choose an image file", true); return; }
+    var sec = state.cfg.menu[t.si], it = sec.items[t.ii];
+    resizeImage(file).then(function (r) {
+      var base = slug(it.name || file.name.replace(/\.[^.]+$/, ""));
+      var path = "images/menu/" + sec.id + "/" + base + "." + r.ext;
+      var n = 2; while (state.pending[path] && path !== it.image) path = "images/menu/" + sec.id + "/" + base + "_" + (n++) + "." + r.ext;
+      if (state.blobUrls[path]) { URL.revokeObjectURL(state.blobUrls[path]); delete state.blobUrls[path]; }
+      state.pending[path] = r.blob;
+      mutate(function () { it.image = path; });
+      render();
+      toast("Photo added · it's included when you download");
+    });
+  });
+
+  /* =========================================================
+     Checks before saving
+     ========================================================= */
+  function checkConfig() {
+    var c = state.cfg, errors = [], warnings = [];
+    var L = { grab: "GrabFood store", messenger: "Messenger", facebook: "Facebook page", instagram: "Instagram", tiktok: "TikTok" };
+    Object.keys(L).forEach(function (k) {
+      var v = (c.links[k] || "").trim();
+      if (!v) (k === "grab" ? errors : warnings).push(["contact", L[k] + " link is empty."]);
+      else if (!isUrl(v)) errors.push(["contact", L[k] + " link should be a full web address starting with https://"]);
+    });
+    if (!c.menu.length) errors.push(["menu", "The menu has no sections."]);
+    c.menu.forEach(function (sec) {
+      if (!sec.title.trim()) errors.push(["menu", "A section is missing its name."]);
+      sec.items.forEach(function (it) {
+        if (!it.name.trim()) errors.push(["menu", "An item in “" + sec.title + "” is missing its name."]);
+        else if (!it.image) warnings.push(["menu", "“" + it.name + "” has no photo yet."]);
+      });
+    });
+    DAYS.forEach(function (d) { rangeErrors(c.hours[d]).forEach(function (m) { errors.push(["hours", DAY_NAME[d] + ": " + m]); }); });
+    if (c.announcement.enabled && !c.announcement.text.trim()) errors.push(["announcement", "The announcement bar is on but has no message."]);
+    if (c.announcement.enabled && c.announcement.linkText && !c.announcement.linkUrl) warnings.push(["announcement", "The announcement has link text but no link."]);
+    c.picks.forEach(function (p) { if (!p.tab.trim()) errors.push(["highlights", "A picks group is missing its tab name."]); });
+    var faq = c.copy.order && c.copy.order.faq;
+    if (Array.isArray(faq)) faq.forEach(function (f, i) { if (!(f.q || "").trim()) warnings.push(["text", "Question " + (i + 1) + " on the Order page has no question text, so it won't show."]); });
+    return { errors: errors, warnings: warnings };
+  }
+  function showIssues(res, verb, proceed, extraHtml) {
+    var dlg = $("#issues-dlg"), body = $("#issues-body"), foot = $("#issues-foot");
+    var blocked = res.errors.length > 0;
+    $("#issues-title").textContent = blocked ? "Please fix these before you " + verb : "Before you " + verb;
+    body.innerHTML = res.errors.concat(res.warnings).map(function (x, i) {
+      var isErr = i < res.errors.length;
+      return '<div class="issue ' + (isErr ? "error" : "warning") + '"><b>' + (isErr ? "Fix" : "Note") + "</b><span>" + esc(x[1]) + '</span><button class="btn outline small" data-goto="' + x[0] + '" type="button">Go there</button></div>';
+    }).join("") + (extraHtml || "");
+    foot.innerHTML = '<button class="btn outline" data-dlg="cancel" type="button">' + (blocked ? "OK" : "Cancel") + "</button>" +
+      (blocked ? "" : '<button class="btn primary" data-dlg="go" type="button">' + verb.charAt(0).toUpperCase() + verb.slice(1) + " anyway</button>");
+    dlg.onclick = function (e) {
+      var g = e.target.closest("[data-goto]"), b = e.target.closest("[data-dlg]"), p = e.target.closest("[data-photos]");
+      if (p) { downloadPendingPhotos(); return; }
+      if (g) { dlg.close(); state.tab = g.getAttribute("data-goto"); render(); return; }
+      if (b) { dlg.close(); if (b.getAttribute("data-dlg") === "go") proceed(); }
+    };
+    dlg.showModal();
+  }
+  function pendingList() { return Object.keys(state.pending).filter(function (p) { return usedPaths()[p]; }); }
+  function usedPaths() { var u = {}; state.cfg.menu.forEach(function (s) { s.items.forEach(function (it) { if (it.image) u[it.image] = 1; }); }); return u; }
+
+  /* =========================================================
+     Download / upload / folder
+     ========================================================= */
+  function downloadBlob(blob, name) {
+    var a = document.createElement("a");
+    a.href = URL.createObjectURL(blob); a.download = name;
+    document.body.appendChild(a); a.click(); a.remove();
+    setTimeout(function () { URL.revokeObjectURL(a.href); }, 4000);
+  }
+  function downloadPendingPhotos() {
+    pendingList().forEach(function (p, i) {
+      setTimeout(function () { downloadBlob(state.pending[p], p.split("/").pop()); }, i * 400);
+    });
+    toast("Downloading " + pendingList().length + " photo(s)");
+  }
+  /* ---------- tiny ZIP writer (no compression) so config.js + new photos come as one download ---------- */
+  var CRC_TABLE = (function () {
+    var t = [], c;
+    for (var n = 0; n < 256; n++) { c = n; for (var k = 0; k < 8; k++) c = c & 1 ? 0xEDB88320 ^ (c >>> 1) : c >>> 1; t[n] = c >>> 0; }
+    return t;
+  })();
+  function crc32(u8) { var c = 0xFFFFFFFF; for (var i = 0; i < u8.length; i++) c = CRC_TABLE[(c ^ u8[i]) & 0xFF] ^ (c >>> 8); return (c ^ 0xFFFFFFFF) >>> 0; }
+  function makeZip(files) {
+    var enc = new TextEncoder(), parts = [], central = [], offset = 0, d = new Date();
+    var time = (d.getHours() << 11) | (d.getMinutes() << 5) | (d.getSeconds() >> 1);
+    var date = ((d.getFullYear() - 1980) << 9) | ((d.getMonth() + 1) << 5) | d.getDate();
+    files.forEach(function (f) {
+      var name = enc.encode(f.name), data = f.data, crc = crc32(data);
+      var h = new DataView(new ArrayBuffer(30));
+      h.setUint32(0, 0x04034b50, true); h.setUint16(4, 20, true); h.setUint16(6, 0x0800, true); h.setUint16(8, 0, true);
+      h.setUint16(10, time, true); h.setUint16(12, date, true); h.setUint32(14, crc, true);
+      h.setUint32(18, data.length, true); h.setUint32(22, data.length, true); h.setUint16(26, name.length, true); h.setUint16(28, 0, true);
+      parts.push(new Uint8Array(h.buffer), name, data);
+      var cd = new DataView(new ArrayBuffer(46));
+      cd.setUint32(0, 0x02014b50, true); cd.setUint16(4, 20, true); cd.setUint16(6, 20, true); cd.setUint16(8, 0x0800, true); cd.setUint16(10, 0, true);
+      cd.setUint16(12, time, true); cd.setUint16(14, date, true); cd.setUint32(16, crc, true);
+      cd.setUint32(20, data.length, true); cd.setUint32(24, data.length, true); cd.setUint16(28, name.length, true);
+      cd.setUint32(42, offset, true);
+      central.push(new Uint8Array(cd.buffer), name);
+      offset += 30 + name.length + data.length;
+    });
+    var size = central.reduce(function (n, a) { return n + a.length; }, 0);
+    var e = new DataView(new ArrayBuffer(22));
+    e.setUint32(0, 0x06054b50, true); e.setUint16(8, files.length, true); e.setUint16(10, files.length, true);
+    e.setUint32(12, size, true); e.setUint32(16, offset, true);
+    return new Blob(parts.concat(central, [new Uint8Array(e.buffer)]), { type: "application/zip" });
+  }
+  function blobBytes(b) {
+    return b.arrayBuffer ? b.arrayBuffer().then(function (x) { return new Uint8Array(x); }) :
+      new Promise(function (r) { var fr = new FileReader(); fr.onload = function () { r(new Uint8Array(fr.result)); }; fr.readAsArrayBuffer(b); });
+  }
+  function doDownload() {
+    var res = checkConfig(), pend = pendingList();
+    if (pend.length) {
+      res = { errors: res.errors, warnings: res.warnings.concat([["menu", "You added " + pend.length + " new photo" + (pend.length === 1 ? "" : "s") +
+        ", so you'll get a zip (le-bean-update.zip) with config.js and the photos already in the right folders. Unzip it into your website folder, then upload."]]) };
+    }
+    var go = function () {
+      if (!pend.length) {
+        downloadBlob(new Blob([serialize(state.cfg)], { type: "text/javascript" }), "config.js");
+        markSaved("downloaded");
+        toast("config.js downloaded · upload it to your site to publish");
+        return;
+      }
+      Promise.all(pend.map(function (p) { return blobBytes(state.pending[p]).then(function (u8) { return { name: p, data: u8 }; }); }))
+        .then(function (photos) {
+          var files = [{ name: "config.js", data: new TextEncoder().encode(serialize(state.cfg)) }].concat(photos);
+          downloadBlob(makeZip(files), "le-bean-update.zip");
+          markSaved("downloaded");
+          toast("le-bean-update.zip downloaded · unzip it into your website folder, then upload");
+        });
+    };
+    if (res.errors.length || res.warnings.length) showIssues(res, "download", go); else go();
+  }
+  function lostPhotosNotice(d) {
+    var lost = (d && d.newPhotos) || [];
+    if (!lost.length) return;
+    var names = [];
+    state.cfg.menu.forEach(function (s) { s.items.forEach(function (it) { if (lost.indexOf(it.image) >= 0) { names.push(it.name || "an item"); it.image = ""; } }); });
+    if (names.length) showBanner("<p><b>Please add these photos again:</b> " + esc(names.join(", ")) + ". New photos can't be kept after the page is closed.</p>" +
+      '<button class="btn small" data-banner="ok" type="button">OK</button>');
+    render();
+  }
+  $("#btn-download").addEventListener("click", doDownload);
+
+  function readFileText(file) { return file.text ? file.text() : new Promise(function (r) { var fr = new FileReader(); fr.onload = function () { r(fr.result); }; fr.readAsText(file); }); }
+  function openUpload() {
+    if (isDirty() && !confirm("Load a different config file? Your unsaved changes here will be replaced.\n\n(Tip: Cancel, then Download to keep them.)")) return;
+    $("#file-upload").value = ""; $("#file-upload").click();
+  }
+  $("#btn-upload").addEventListener("click", openUpload);
+  $("#empty-upload").addEventListener("click", openUpload);
+  $("#file-upload").addEventListener("change", function (e) {
+    var f = e.target.files && e.target.files[0];
+    if (!f) return;
+    readFileText(f).then(function (text) {
+      try {
+        var cfg = parseConfigText(text);
+        state.pending = {};
+        load(cfg, "Uploaded: " + f.name, { skipDraft: true });
+        clearDraft(); state.savedAt = null; updateStatus();
+        toast("Loaded " + f.name);
+      } catch (ex) { toast(ex.message, true); alert(ex.message); }
+    });
+  });
+
+
+  /* =========================================================
+     Preview (draft travels to the site page in the frame's window.name)
+     ========================================================= */
+  var dlg = $("#preview-dlg"), frame = $("#preview-frame");
+  function previewUrl() { return $("#preview-page").value + "?preview=" + Date.now(); }
+  // A fresh frame each time: browsers only hand a frame's name to the page when the frame is created with it
+  function loadPreview() {
+    var f = document.createElement("iframe");
+    f.id = "preview-frame"; f.title = "Website preview";
+    f.name = "lebean-preview:" + JSON.stringify(state.cfg);
+    f.src = previewUrl();
+    frame.replaceWith(f);
+    frame = f;
+  }
+  function refreshPreview() { if (dlg.open) loadPreview(); }
+  $("#btn-preview").addEventListener("click", function () { dlg.showModal(); loadPreview(); });
+  $("#preview-close").addEventListener("click", function () { dlg.close(); frame.removeAttribute("src"); frame.name = ""; });
+  $("#preview-page").addEventListener("change", loadPreview);
+  $$("#preview-dlg .seg button").forEach(function (b) {
+    b.addEventListener("click", function () {
+      $$("#preview-dlg .seg button").forEach(function (x) { x.setAttribute("aria-pressed", x === b ? "true" : "false"); });
+      dlg.classList.toggle("phone", b.getAttribute("data-size") === "phone");
+    });
+  });
+  $("#preview-tab").addEventListener("click", function () {
+    // a unique stamp keeps this name different from the preview frame's, so the browser opens a new tab
+    window.open($("#preview-page").value + "?preview", "lebean-preview:" + JSON.stringify(Object.assign({ _opened: Date.now() }, state.cfg)));
+  });
+
+  /* ---------- keyboard & leaving ---------- */
+  document.addEventListener("keydown", function (e) {
+    var mod = e.ctrlKey || e.metaKey;
+    if (mod && e.key.toLowerCase() === "s") {
+      e.preventDefault();
+      if (!state.cfg) return;
+      doDownload();
+    } else if (mod && e.key.toLowerCase() === "z" && !e.shiftKey) {
+      var t = e.target;
+      if (t && (t.tagName === "INPUT" || t.tagName === "TEXTAREA") && t.type !== "checkbox") return; // let the field undo its own typing
+      e.preventDefault(); undo();
+    }
+  });
+  $("#btn-undo").addEventListener("click", undo);
+  window.addEventListener("beforeunload", function (e) {
+    if (isDirty()) { saveDraft(); e.preventDefault(); e.returnValue = ""; }
+  });
+
+  /* =========================================================
+     Start
+     ========================================================= */
+  $("#empty").hidden = false;
+  $("span", $("#status")).textContent = "No file uploaded yet";
+  (function () {
+    var d = readDraft();
+    if (!d || !d.cfg) return;
+    showBanner("<p><b>You have unsaved edits from " + esc(new Date(d.at).toLocaleString()) + ".</b> Continue editing them, or upload a config.js to start fresh.</p>" +
+      '<button class="btn small" data-banner="restore" type="button">Continue my edits</button>' +
+      '<button class="btn outline small" data-banner="discard" type="button">Discard them</button>', function (act) {
+      if (act !== "restore") { clearDraft(); return; }
+      load(d.cfg, "Restored edits", { skipDraft: true });
+      state.baseline = ""; updateStatus();
+      lostPhotosNotice(d);
+    });
+  })();
+})();
+</script>
+</body>
+</html>
