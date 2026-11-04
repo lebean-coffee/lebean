@@ -97,8 +97,10 @@
     return '<a class="btn-grab' + (extra || "") + '" href="' + esc(safeUrl(cfg.links && cfg.links.grab)) +
       '" target="_blank" rel="noopener" data-href="grab">' + BAG_SVG + "<span>" + esc(label) + "</span></a>";
   }
+  // The editor's preview maps file paths to files that aren't uploaded yet; on the live site this does nothing
+  function asset(u) { return u && typeof window.__LEBEAN_ASSET === "function" ? window.__LEBEAN_ASSET(u) : u; }
   function imgHTML(it) {
-    return '<img src="' + esc(safeUrl(it.image)) + '" alt="' + esc(it.name) + '" loading="lazy" width="300" height="300">';
+    return '<img src="' + esc(asset(safeUrl(it.image))) + '" alt="' + esc(it.name) + '" loading="lazy" width="300" height="300">';
   }
 
 
@@ -268,6 +270,47 @@
           '</h2><span class="count">' + sec.items.length + " items</span></div>" +
           '<div class="dish-grid">' + dishes + "</div></section>";
       }).join("");
+    });
+
+    // Videos: each video spot plays the file chosen in config.js; its cover image has the same name with .webp
+    var vids = cfg.videos || {};
+    each("video[data-video]", function (v) {
+      var src = safeUrl(vids[v.getAttribute("data-video")]);
+      if (!src) return;
+      var poster = asset(src.replace(/\.[a-z0-9]+$/i, ".webp"));
+      src = asset(src);
+      if (v.getAttribute("poster") !== poster) v.setAttribute("poster", poster);
+      var source = v.querySelector("source");
+      if (source && source.getAttribute("src") !== src) {
+        source.setAttribute("src", src);
+        if (v.load && !window.__LEBEAN_PRERENDER) v.load();
+      }
+    });
+
+    // Grab rating stars (Reviews & FAQ page): the gold part follows the score, e.g. 4.8 fills 96%
+    each("[data-rating-stars]", function (el) {
+      var score = parseFloat(copyValue(copy, "feedback.ratingScore"));
+      if (!(score > 0)) return;
+      score = Math.min(5, score);
+      var fill = el.querySelector(".rating-stars-fill");
+      if (fill) fill.style.width = (score / 5 * 100) + "%";
+      el.setAttribute("aria-label", score + " out of 5 stars");
+    });
+
+    // Customer reviews (Reviews & FAQ page) — the section stays hidden until there is at least one
+    each('[data-render="reviews"]', function (el) {
+      var list = (cfg.reviews || []).filter(function (r) { return r && String(r.text || "").trim(); });
+      el.innerHTML = list.map(function (r) {
+        var n = Math.max(0, Math.min(5, parseInt(r.rating, 10) || 0));
+        var stars = n ? '<div class="review-stars" role="img" aria-label="' + n + ' out of 5 stars">' +
+          "★★★★★".slice(0, n) + '<span class="off">' + "★★★★★".slice(0, 5 - n) + "</span></div>" : "";
+        var who = esc(r.name || "A happy customer");
+        var src = r.source ? '<span class="review-src">' + esc(r.source) + "</span>" : "";
+        return '<figure class="review reveal">' + stars + "<blockquote>" + esc(r.text) + "</blockquote>" +
+          "<figcaption><b>" + who + "</b>" + src + "</figcaption></figure>";
+      }).join("");
+      var sec = el.closest("[data-reviews-section]");
+      if (sec) sec.hidden = !list.length;
     });
 
     // Announcement bar (optional)

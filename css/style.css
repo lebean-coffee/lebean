@@ -1214,3 +1214,51 @@ h1, h2, h3, h4 {
 @media (max-width: 600px) {
   .promo-cta { right: 8px; bottom: 8px; font-size: 0.72rem; padding: 0.32rem 0.65rem; }
 }
+
+/* =========================================================
+   v20 — Feedback & FAQ page: ways to leave feedback, customer reviews
+   ========================================================= */
+.feedback-ways .value { display: flex; flex-direction: column; }
+.feedback-ways .value p { flex: 1; }
+.feedback-ways .value .num { margin-bottom: 1.6rem; }
+.feedback-ways .value .btn { margin-top: 1.4rem; align-self: flex-start; white-space: normal; text-align: left; }
+.reviews-section[hidden] { display: none; }
+.reviews { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 1.2rem; }
+.review {
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.9rem;
+  background: var(--cream);
+  color: var(--bean);
+  border-radius: var(--r-lg);
+  padding: 1.6rem;
+}
+.review-stars { color: #f5b301; letter-spacing: 0.12em; font-size: 1.05rem; line-height: 1; }
+.review-stars .off { color: rgba(59, 37, 7, 0.18); }
+.review blockquote { flex: 1; font-size: 1.02rem; line-height: 1.55; white-space: pre-line; overflow-wrap: anywhere; }
+.review blockquote::before { content: "“"; }
+.review blockquote::after { content: "”"; }
+.review figcaption { display: flex; flex-wrap: wrap; align-items: center; gap: 0.5rem 0.7rem; font-size: 0.92rem; }
+.review-src { font-size: 0.72rem; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase; background: rgba(59, 37, 7, 0.08); padding: 0.2rem 0.6rem; border-radius: 999px; }
+
+/* ---------- v23: Reviews & FAQ ---------- */
+@media (min-width: 761px) { .feedback-ways { grid-template-columns: repeat(2, 1fr); } }
+.rating-summary {
+  display: flex; flex-wrap: wrap; align-items: center; gap: 1.4rem 2.4rem;
+  background: rgba(243, 237, 181, 0.08); border: 1px solid rgba(243, 237, 181, 0.18);
+  border-radius: var(--r-lg); padding: 1.6rem 1.8rem; margin-bottom: 1.6rem; color: var(--cream);
+}
+.rating-score { display: flex; align-items: center; gap: 1.1rem; }
+.rating-num { font-size: clamp(3.2rem, 7vw, 4.6rem); font-weight: 700; line-height: 0.9; letter-spacing: -0.04em; }
+.rating-stars { position: relative; display: inline-block; color: rgba(243, 237, 181, 0.22); font-size: 1.5rem; letter-spacing: 0.12em; line-height: 1; white-space: nowrap; }
+.rating-stars-fill { position: absolute; inset: 0 auto 0 0; overflow: hidden; color: #f5b301; }
+.rating-count { margin: 0.5rem 0 0; font-size: 0.95rem; opacity: 0.85; }
+.rating-awards { flex: 1 1 260px; }
+.rating-awards-note { margin: 0 0 0.6rem; font-size: 0.75rem; font-weight: 600; letter-spacing: 0.12em; text-transform: uppercase; opacity: 0.7; }
+.rating-badges { display: flex; flex-wrap: wrap; gap: 0.6rem; }
+.rating-badge { display: inline-flex; align-items: center; gap: 0.45rem; background: var(--grab, #00b14f); color: #fff; font-size: 0.95rem; padding: 0.45rem 0.95rem; border-radius: 999px; }
+.rating-badge b { font-weight: 600; }
+.rating-link { flex-shrink: 0; }
+@media (max-width: 560px) { .rating-summary { padding: 1.3rem; } .rating-link { width: 100%; } }
+@media (min-width: 1000px) { .reviews { grid-template-columns: repeat(3, 1fr); } }

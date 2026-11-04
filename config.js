@@ -1,5 +1,5 @@
 /* Le Bean website settings.
-   Edit these with admin.html (recommended), or carefully by hand.
+   Edit these with the website editor, le-bean-site-admin-vN.html (recommended), or carefully by hand.
    If you edit by hand, keep the data valid JSON (straight double quotes, commas between items). */
 window.LEBEAN_CONFIG = {
   "version": 1,
@@ -467,15 +467,47 @@ window.LEBEAN_CONFIG = {
       "ctaTitle": "Wherever you are, *we'll come to you.*",
       "ctaText": "We deliver from Mintal through GrabFood — and we're available for [special events](index.html#events) too."
     },
-    "order": {
-      "label": "Order online",
-      "title": "Le Bean, *delivered.*",
-      "lead": "Your favourite cup and a warm rice meal, brought straight to your door through GrabFood.",
-      "cardPill": "Available on GrabFood",
-      "cardTitle": "Hungry *or thirsty?*",
-      "cardText": "Open Le Bean in Grab, add your drinks and meals, and track your rider in real time.",
-      "cardTiny": "Opens GrabFood in a new tab. Delivery fees and availability depend on your location.",
-      "stepsLabel": "How it works",
+    "contact": {
+      "label": "Contact",
+      "title": "Say ((hello))",
+      "lead": "Questions, bulk orders, collabs, or just a coffee compliment — we read every message.",
+      "fbNote": "Fastest reply via Messenger",
+      "eventsText": "Birthdays, office treats, and celebrations — [tell us about yours on Messenger]({messenger})",
+      "feedTitle": "Fresh from *our Facebook.*",
+      "feedText": "Latest posts, promos, and news. For questions, orders, or events, message us — we reply fastest on Messenger."
+    },
+    "footer": {
+      "title": "Your next cup is\n*one tap away.*",
+      "tagline": "Sip. Smile. Repeat.",
+      "recognition": "★ 5-Star Eats · Top Service on GrabFood"
+    },
+    "shared": {
+      "trustRating": "**5-Star Eats** on GrabFood",
+      "trustService": "**Top Service** on GrabFood"
+    },
+    "feedback": {
+      "label": "Reviews & FAQ",
+      "title": "We're all *ears.*",
+      "lead": "Loved your order? Something not quite right? Got an idea for the menu? Tell us — and find quick answers to common questions below.",
+      "asideTitle": "Every review counts.",
+      "asideText": "We read every one, and it helps more people in Mintal find us.",
+      "shareLabel": "Share your feedback",
+      "shareTitle": "How was *your order?*",
+      "shareText": "A quick rating or a few words go a long way for a small shop like ours.",
+      "way1Title": "Rate your order on Grab",
+      "way1Text": "After your order arrives, the Grab app asks you to rate it. A few stars and a quick note mean the world to us.",
+      "way3Title": "Tell us directly",
+      "way3Text": "Something not right, or an idea for the menu? Message us and we'll get back to you.",
+      "reviewsLabel": "What customers say",
+      "reviewsTitle": "Straight from *our customers.*",
+      "reviewsText": "Real reviews from people who ordered from us on GrabFood.",
+      "ratingScore": "4.8",
+      "ratingCount": "Based on 174 ratings on GrabFood",
+      "awardsNote": "Awarded on GrabFood",
+      "award1": "5-Star Eats",
+      "award2": "Good Service",
+      "ratingLink": "See us on GrabFood",
+      "stepsLabel": "How to order",
       "stepsTitle": "Three taps *to happy.*",
       "step1Num": "01",
       "step1Title": "Open Grab",
@@ -512,24 +544,71 @@ window.LEBEAN_CONFIG = {
       "promoText": "Find us on GrabFood as **Le Bean Dvo**",
       "ctaTitle": "Still *deciding?*",
       "ctaText": "Browse the [full menu](menu.html), then order it all on GrabFood — made fresh and delivered to your door."
-    },
-    "contact": {
-      "label": "Contact",
-      "title": "Say ((hello))",
-      "lead": "Questions, bulk orders, collabs, or just a coffee compliment — we read every message.",
-      "fbNote": "Fastest reply via Messenger",
-      "eventsText": "Birthdays, office treats, and celebrations — [tell us about yours on Messenger]({messenger})",
-      "feedTitle": "Fresh from *our Facebook.*",
-      "feedText": "Latest posts, promos, and news. For questions, orders, or events, message us — we reply fastest on Messenger."
-    },
-    "footer": {
-      "title": "Your next cup is\n*one tap away.*",
-      "tagline": "Sip. Smile. Repeat.",
-      "recognition": "★ 5-Star Eats · Top Service on GrabFood"
-    },
-    "shared": {
-      "trustRating": "**5-Star Eats** on GrabFood",
-      "trustService": "**Top Service** on GrabFood"
     }
-  }
+  },
+  "release": 23,
+  "videos": {
+    "homeHero": "videos/reel-2.mp4",
+    "homeReel1": "videos/reel-1.mp4",
+    "homeReel2": "videos/reel-3.mp4",
+    "homeReel3": "videos/reel-4.mp4",
+    "homeReel4": "videos/reel-5.mp4",
+    "aboutBar": "videos/reel-1.mp4"
+  },
+  "reviews": [
+    {
+      "name": "Duzylle",
+      "source": "",
+      "rating": 5,
+      "text": "lami jud kaayo ahhh basta dili nko ma explain ☺️"
+    },
+    {
+      "name": "Claudine",
+      "source": "",
+      "rating": 5,
+      "text": "Sobra kalami sa Ube Cloud Latte! Reminds me of Childhood. 🥹✨ My husband also loved the DTML 🥤"
+    },
+    {
+      "name": "KRJ",
+      "source": "",
+      "rating": 5,
+      "text": "ambilis naubos di na halos nakapicture 😆1st time order sa kanila but surely we will order again 😊"
+    },
+    {
+      "name": "Joan",
+      "source": "",
+      "rating": 5,
+      "text": "size, portion and tastes really good!"
+    },
+    {
+      "name": "Tryke",
+      "source": "",
+      "rating": 5,
+      "text": "the best!\nsuper lameeeeeeeannnnn"
+    },
+    {
+      "name": "Rods",
+      "source": "",
+      "rating": 5,
+      "text": "super legit ang churro bites! really good, balanced ang sweetness sa classic cinnamon-sugar coated ones. lami jud! 🥰"
+    },
+    {
+      "name": "Chin",
+      "source": "",
+      "rating": 5,
+      "text": "The food and drink is good for the price. Will definitely order next time."
+    },
+    {
+      "name": "Rods",
+      "source": "",
+      "rating": 5,
+      "text": "humba is a fave! food tastes fresh and serving is generous. 😍"
+    },
+    {
+      "name": "Tryke",
+      "source": "",
+      "rating": 5,
+      "text": "Great experience with Le Bean Dvo - Mintal! Drinks were delicious—Thai milk tea was rich, and the strawberry lemon pop was refreshing. Fast delivery and well-packed. Will order again! ⭐⭐⭐⭐⭐"
+    }
+  ]
 };
