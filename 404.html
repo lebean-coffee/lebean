@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html lang="en-PH">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Page not found | Le Bean Coffee, Mintal, Davao City</title>
+  <meta name="robots" content="noindex">
+  <link rel="icon" href="/favicon.svg" type="image/svg+xml">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,400;12..96,600;12..96,700&amp;family=Caveat+Brush&amp;display=swap" rel="stylesheet">
+  <style>
+    * { box-sizing: border-box; }
+    html, body { margin: 0; height: 100%; }
+    body { background: #3b2507; color: #f3edb5; font-family: "Bricolage Grotesque", system-ui, -apple-system, "Segoe UI", sans-serif;
+      display: grid; place-items: center; padding: 28px 20px; text-align: center; }
+    main { max-width: 620px; }
+    img.logo { width: 170px; height: auto; margin-bottom: 34px; }
+    .code { font-size: clamp(5rem, 22vw, 9rem); font-weight: 700; line-height: 0.85; letter-spacing: -0.05em; margin: 0; }
+    .code span { font-family: "Caveat Brush", cursive; font-weight: 400; color: #c98b3a; letter-spacing: 0; }
+    h1 { font-size: clamp(1.6rem, 5vw, 2.3rem); letter-spacing: -0.02em; margin: 22px 0 10px; }
+    p { color: rgba(243, 237, 181, 0.8); font-size: 1.05rem; line-height: 1.55; margin: 0 auto 28px; max-width: 46ch; }
+    .row { display: flex; flex-wrap: wrap; gap: 10px; justify-content: center; }
+    a.btn { display: inline-flex; align-items: center; gap: 8px; min-height: 48px; padding: 12px 22px; border-radius: 999px; font-weight: 600;
+      text-decoration: none; border: 1.5px solid rgba(243, 237, 181, 0.4); color: #f3edb5; transition: background .2s, border-color .2s; }
+    a.btn:hover { border-color: #f3edb5; background: rgba(243, 237, 181, 0.08); }
+    a.btn.cream { background: #f3edb5; color: #3b2507; border-color: #f3edb5; }
+    a.btn.cream:hover { background: #fff8c9; }
+    a.btn.grab { background: #00b14f; color: #fff; border-color: #00b14f; }
+    a.btn.grab:hover { background: #00a046; }
+  </style>
+</head>
+<body>
+  <main>
+    <a href="/"><img class="logo" src="/images/brand/logo-cream.png" alt="Le Bean"></a>
+    <p class="code">4<span>0</span>4</p>
+    <h1>This page spilled its coffee.</h1>
+    <p>We couldn't find that page. It may have moved, or the address has a typo. Here's where you can go instead:</p>
+    <div class="row">
+      <a class="btn cream" href="/">Home</a>
+      <a class="btn" href="/menu.html">See the menu</a>
+      <a class="btn" href="/reviews.html">Reviews &amp; FAQ</a>
+      <a class="btn grab" id="grab" href="https://food.grab.com/ph/en/restaurant/le-bean-dvo-mintal-delivery/2-C7MWLJEXV2VTGT" target="_blank" rel="noopener">Order on GrabFood ↗</a>
+    </div>
+  </main>
+  <script src="/config.js"></script>
+  <script>
+    // keep the Grab button in step with the link set in the website editor
+    try { var g = window.LEBEAN_CONFIG.links.grab; if (/^https:\/\//.test(g)) document.getElementById("grab").href = g; } catch (e) {}
+  </script>
+</body>
+</html>

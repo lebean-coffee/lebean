@@ -374,7 +374,7 @@ window.LEBEAN_CONFIG = {
       "heroLead": "Creamy lattes, bright tea refreshers, and hearty rice meals from our little bar in Mintal — delivered to your door through GrabFood.",
       "heroCtaNote": "tap, sip, smile —\nwe'll handle the rest",
       "videoNote": "watch us\nmake it ↓",
-      "floatService": "Top Service",
+      "floatService": "Good Service",
       "floatRating": "5-Star Eats",
       "fact1Title": "5-Star *Eats*",
       "fact1Text": "Top-rated by customers on GrabFood",
@@ -458,7 +458,7 @@ window.LEBEAN_CONFIG = {
       "value2Title": "Real, great flavour",
       "value2Text": "Proper espresso, real ube, Milo done thick, and Thai tea done right — flavours that taste like home.",
       "value3Title": "Service you can count on",
-      "value3Text": "Rated Top Service on GrabFood — always available, on time, and getting your order right.",
+      "value3Text": "Rated Good Service on GrabFood — always available, on time, and getting your order right.",
       "barLabel": "At the bar",
       "barTitle": "Careful hands, *happy smiles.*",
       "barText": "Every cup gets our full attention, from the first pour to the final drizzle — then it's packed with care so it arrives just as good through GrabFood.",
@@ -474,16 +474,18 @@ window.LEBEAN_CONFIG = {
       "fbNote": "Fastest reply via Messenger",
       "eventsText": "Birthdays, office treats, and celebrations — [tell us about yours on Messenger]({messenger})",
       "feedTitle": "Fresh from *our Facebook.*",
-      "feedText": "Latest posts, promos, and news. For questions, orders, or events, message us — we reply fastest on Messenger."
+      "feedText": "Latest posts, promos, and news. For questions, orders, or events, message us — we reply fastest on Messenger.",
+      "qrTitle": "Scan to order on *GrabFood*",
+      "qrText": "Point your phone camera at the code to open Le Bean in Grab. Handy for flyers, cup stickers, and delivery bags too."
     },
     "footer": {
       "title": "Your next cup is\n*one tap away.*",
       "tagline": "Sip. Smile. Repeat.",
-      "recognition": "★ 5-Star Eats · Top Service on GrabFood"
+      "recognition": "★ 5-Star Eats · Good Service on GrabFood"
     },
     "shared": {
       "trustRating": "**5-Star Eats** on GrabFood",
-      "trustService": "**Top Service** on GrabFood"
+      "trustService": "**Good Service** on GrabFood"
     },
     "feedback": {
       "label": "Reviews & FAQ",
@@ -501,8 +503,7 @@ window.LEBEAN_CONFIG = {
       "reviewsLabel": "What customers say",
       "reviewsTitle": "Straight from *our customers.*",
       "reviewsText": "Real reviews from people who ordered from us on GrabFood.",
-      "ratingScore": "4.8",
-      "ratingCount": "Based on 174 ratings on GrabFood",
+      "ratingCount": "Based on {ratings} ratings on GrabFood",
       "awardsNote": "Awarded on GrabFood",
       "award1": "5-Star Eats",
       "award2": "Good Service",
@@ -529,8 +530,8 @@ window.LEBEAN_CONFIG = {
           "a": "Delivery range is set by GrabFood based on your location. If Le Bean shows up in your app, we can reach you."
         },
         {
-          "q": "What do “5-Star Eats” and “Top Service” mean?",
-          "a": "They're GrabFood recognitions. 5-Star Eats comes from customer ratings, and Top Service means we're consistently available, on time, and get orders right."
+          "q": "What do “5-Star Eats” and “Good Service” mean?",
+          "a": "They're GrabFood recognitions. 5-Star Eats comes from customer ratings, and Good Service means we're consistently available, on time, and get orders right."
         },
         {
           "q": "Will my iced drink hold up on the way?",
@@ -546,7 +547,7 @@ window.LEBEAN_CONFIG = {
       "ctaText": "Browse the [full menu](menu.html), then order it all on GrabFood — made fresh and delivered to your door."
     }
   },
-  "release": 23,
+  "release": 25,
   "videos": {
     "homeHero": "videos/reel-2.mp4",
     "homeReel1": "videos/reel-1.mp4",
@@ -610,5 +611,17 @@ window.LEBEAN_CONFIG = {
       "rating": 5,
       "text": "Great experience with Le Bean Dvo - Mintal! Drinks were delicious—Thai milk tea was rich, and the strawberry lemon pop was refreshing. Fast delivery and well-packed. Will order again! ⭐⭐⭐⭐⭐"
     }
-  ]
+  ],
+  "grabRating": {
+    "score": 4.8,
+    "count": 174
+  },
+  "spotlight": {
+    "enabled": false,
+    "item": "",
+    "badge": "New",
+    "title": "",
+    "text": "",
+    "button": "Order on Grab"
+  }
 };

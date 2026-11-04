@@ -97,8 +97,152 @@
     return '<a class="btn-grab' + (extra || "") + '" href="' + esc(safeUrl(cfg.links && cfg.links.grab)) +
       '" target="_blank" rel="noopener" data-href="grab">' + BAG_SVG + "<span>" + esc(label) + "</span></a>";
   }
+  // ---- Tiny QR code maker (byte mode, error correction level M, versions 1-10), used for the "Order on Grab" QR code
+  var QR = (function () {
+    var EXP = [], LOG = [];
+    (function () { var x = 1; for (var i = 0; i < 255; i++) { EXP[i] = x; LOG[x] = i; x <<= 1; if (x & 0x100) x ^= 0x11d; } })();
+    function mul(a, b) { return a && b ? EXP[(LOG[a] + LOG[b]) % 255] : 0; }
+    // version: [ec codewords per block, [blocks, data codewords], ...]
+    var M = { 1: [10, [1, 16]], 2: [16, [1, 28]], 3: [26, [1, 44]], 4: [18, [2, 32]], 5: [24, [2, 43]], 6: [16, [4, 27]],
+      7: [18, [4, 31]], 8: [22, [2, 38], [2, 39]], 9: [22, [3, 36], [2, 37]], 10: [26, [4, 43], [1, 44]] };
+    var ALIGN = { 1: [], 2: [6, 18], 3: [6, 22], 4: [6, 26], 5: [6, 30], 6: [6, 34], 7: [6, 22, 38], 8: [6, 24, 42], 9: [6, 26, 46], 10: [6, 28, 50] };
+    function rsRem(data, deg) {
+      var gen = [1];
+      for (var i = 0; i < deg; i++) {
+        var next = [];
+        for (var j = 0; j <= gen.length; j++) next[j] = (j < gen.length ? gen[j] : 0) ^ (j > 0 ? mul(gen[j - 1], EXP[i]) : 0);
+        gen = next;
+      }
+      var res = []; for (var k = 0; k < deg; k++) res.push(0);
+      data.forEach(function (b) {
+        var f = b ^ res.shift(); res.push(0);
+        for (var j = 0; j < deg; j++) res[j] ^= mul(gen[j + 1], f);
+      });
+      return res;
+    }
+    function utf8(s) { var out = [], e = unescape(encodeURIComponent(s)); for (var i = 0; i < e.length; i++) out.push(e.charCodeAt(i)); return out; }
+    function make(text) {
+      var bytes = utf8(text), ver = 0, info, dataCount;
+      for (var v = 1; v <= 10; v++) {
+        info = M[v]; dataCount = 0;
+        for (var g = 1; g < info.length; g++) dataCount += info[g][0] * info[g][1];
+        if (4 + (v < 10 ? 8 : 16) + 8 * bytes.length <= dataCount * 8) { ver = v; break; }
+      }
+      if (!ver) return null;
+      // data bits
+      var bits = [];
+      function put(val, n) { for (var i = n - 1; i >= 0; i--) bits.push((val >>> i) & 1); }
+      put(4, 4); put(bytes.length, ver < 10 ? 8 : 16);
+      bytes.forEach(function (b) { put(b, 8); });
+      put(0, Math.min(4, dataCount * 8 - bits.length));
+      while (bits.length % 8) bits.push(0);
+      var data = [];
+      for (var i = 0; i < bits.length; i += 8) { var b = 0; for (var j = 0; j < 8; j++) b = (b << 1) | bits[i + j]; data.push(b); }
+      for (var pad = 0; data.length < dataCount; pad++) data.push(pad % 2 ? 0x11 : 0xEC);
+      // blocks, error correction, interleaving
+      var blocks = [], ecs = [], pos = 0, ecLen = info[0];
+      for (var g2 = 1; g2 < info.length; g2++) for (var n = 0; n < info[g2][0]; n++) {
+        var blk = data.slice(pos, pos + info[g2][1]); pos += info[g2][1];
+        blocks.push(blk); ecs.push(rsRem(blk, ecLen));
+      }
+      var words = [], maxLen = blocks[blocks.length - 1].length;
+      for (var c = 0; c < maxLen; c++) blocks.forEach(function (bk) { if (c < bk.length) words.push(bk[c]); });
+      for (var e = 0; e < ecLen; e++) ecs.forEach(function (ek) { words.push(ek[e]); });
+      // matrix
+      var size = ver * 4 + 17, mod = [], fn = [];
+      for (var y = 0; y < size; y++) { mod.push([]); fn.push([]); for (var x = 0; x < size; x++) { mod[y].push(false); fn[y].push(false); } }
+      function set(x, y, dark) { mod[y][x] = !!dark; fn[y][x] = true; }
+      for (var t = 0; t < size; t++) { set(6, t, t % 2 === 0); set(t, 6, t % 2 === 0); }
+      [[3, 3], [size - 4, 3], [3, size - 4]].forEach(function (p) {
+        for (var dy = -4; dy <= 4; dy++) for (var dx = -4; dx <= 4; dx++) {
+          var xx = p[0] + dx, yy = p[1] + dy, d = Math.max(Math.abs(dx), Math.abs(dy));
+          if (xx >= 0 && xx < size && yy >= 0 && yy < size) set(xx, yy, d !== 2 && d !== 4);
+        }
+      });
+      var al = ALIGN[ver], last = al.length - 1;
+      for (var ai = 0; ai < al.length; ai++) for (var aj = 0; aj < al.length; aj++) {
+        if ((ai === 0 && aj === 0) || (ai === 0 && aj === last) || (ai === last && aj === 0)) continue;
+        for (var ady = -2; ady <= 2; ady++) for (var adx = -2; adx <= 2; adx++) set(al[ai] + adx, al[aj] + ady, Math.max(Math.abs(adx), Math.abs(ady)) !== 1);
+      }
+      function format(mask) {
+        var d = mask, r = d; // level M = 00
+        for (var i = 0; i < 10; i++) r = (r << 1) ^ ((r >>> 9) * 0x537);
+        var fb = ((d << 10) | r) ^ 0x5412, bit = function (i) { return (fb >>> i) & 1; };
+        for (var i2 = 0; i2 <= 5; i2++) set(8, i2, bit(i2));
+        set(8, 7, bit(6)); set(8, 8, bit(7)); set(7, 8, bit(8));
+        for (var i3 = 9; i3 < 15; i3++) set(14 - i3, 8, bit(i3));
+        for (var i4 = 0; i4 < 8; i4++) set(size - 1 - i4, 8, bit(i4));
+        for (var i5 = 8; i5 < 15; i5++) set(8, size - 15 + i5, bit(i5));
+        set(8, size - 8, true);
+      }
+      format(0);
+      if (ver >= 7) {
+        var vr = ver;
+        for (var vi = 0; vi < 12; vi++) vr = (vr << 1) ^ ((vr >>> 11) * 0x1f25);
+        var vb = (ver << 12) | vr;
+        for (var k = 0; k < 18; k++) { var on = (vb >>> k) & 1, a = size - 11 + k % 3, bb = Math.floor(k / 3); set(a, bb, on); set(bb, a, on); }
+      }
+      var bi = 0;
+      for (var right = size - 1; right >= 1; right -= 2) {
+        if (right === 6) right = 5;
+        for (var vert = 0; vert < size; vert++) for (var jj = 0; jj < 2; jj++) {
+          var cx = right - jj, up = ((right + 1) & 2) === 0, cy = up ? size - 1 - vert : vert;
+          if (!fn[cy][cx] && bi < words.length * 8) { mod[cy][cx] = ((words[bi >>> 3] >>> (7 - (bi & 7))) & 1) === 1; bi++; }
+        }
+      }
+      var MASKS = [
+        function (x, y) { return (x + y) % 2 === 0; }, function (x, y) { return y % 2 === 0; },
+        function (x) { return x % 3 === 0; }, function (x, y) { return (x + y) % 3 === 0; },
+        function (x, y) { return (Math.floor(x / 3) + Math.floor(y / 2)) % 2 === 0; }, function (x, y) { return (x * y) % 2 + (x * y) % 3 === 0; },
+        function (x, y) { return ((x * y) % 2 + (x * y) % 3) % 2 === 0; }, function (x, y) { return ((x + y) % 2 + (x * y) % 3) % 2 === 0; }];
+      function applyMask(m) { for (var y2 = 0; y2 < size; y2++) for (var x2 = 0; x2 < size; x2++) if (!fn[y2][x2] && MASKS[m](x2, y2)) mod[y2][x2] = !mod[y2][x2]; }
+      function penalty() {
+        var p = 0, dark = 0;
+        function lines(get) {
+          for (var a = 0; a < size; a++) {
+            var run = 1, seq = "";
+            for (var b = 0; b < size; b++) {
+              var v2 = get(a, b); seq += v2 ? "1" : "0";
+              if (b > 0) { if (v2 === get(a, b - 1)) { run++; if (run === 5) p += 3; else if (run > 5) p++; } else run = 1; }
+            }
+            seq = "0000" + seq + "0000";
+            var re = /(?=(10111010000|00001011101))/g;
+            while (re.exec(seq)) { p += 40; re.lastIndex++; }
+          }
+        }
+        lines(function (a, b) { return mod[a][b]; });
+        lines(function (a, b) { return mod[b][a]; });
+        for (var y3 = 0; y3 < size; y3++) for (var x3 = 0; x3 < size; x3++) {
+          if (mod[y3][x3]) dark++;
+          if (y3 < size - 1 && x3 < size - 1) { var c0 = mod[y3][x3]; if (c0 === mod[y3][x3 + 1] && c0 === mod[y3 + 1][x3] && c0 === mod[y3 + 1][x3 + 1]) p += 3; }
+        }
+        var total = size * size;
+        return p + (Math.ceil(Math.abs(dark * 20 - total * 10) / total) - 1) * 10;
+      }
+      var best = 0, bestP = Infinity;
+      for (var mk = 0; mk < 8; mk++) {
+        applyMask(mk); format(mk);
+        var pen = penalty();
+        if (pen < bestP) { bestP = pen; best = mk; }
+        applyMask(mk);
+      }
+      applyMask(best); format(best);
+      return mod;
+    }
+    function svg(text, color) {
+      var m = make(text);
+      if (!m) return "";
+      var n = m.length, q = 4, d = "";
+      for (var y = 0; y < n; y++) for (var x = 0; x < n; x++) if (m[y][x]) d += "M" + (x + q) + " " + (y + q) + "h1v1h-1z";
+      return '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ' + (n + 2 * q) + " " + (n + 2 * q) + '" shape-rendering="crispEdges" role="img" aria-label="QR code">' +
+        '<rect width="100%" height="100%" fill="#fff"/><path fill="' + (color || "#2a1a04") + '" d="' + d + '"/></svg>';
+    }
+    return { make: make, svg: svg };
+  })();
+
   // The editor's preview maps file paths to files that aren't uploaded yet; on the live site this does nothing
   function asset(u) { return u && typeof window.__LEBEAN_ASSET === "function" ? window.__LEBEAN_ASSET(u) : u; }
+  function soldOutHTML(it) { return it.soldOut ? '<span class="soldout-tag">Sold out today</span>' : ""; }
   function imgHTML(it) {
     return '<img src="' + esc(asset(safeUrl(it.image))) + '" alt="' + esc(it.name) + '" loading="lazy" width="300" height="300">';
   }
@@ -106,14 +250,19 @@
 
   /* ---------- Page wording: simple formatting marks → HTML (always escaped first) ----------
      *handwritten*  ((circled))  __underlined__  **bold**  [link text](address)
-     {count} = number of menu items   {hours} = opening hours sentence   new line = line break
+     {count} = number of menu items   {hours} = opening hours sentence   {ratings} = number of Grab ratings   new line = line break
      Link addresses may use {grab} {facebook} {instagram} {tiktok} {messenger} {maps}. */
+  function grabCount(cfg) {
+    var n = cfg.grabRating ? parseInt(cfg.grabRating.count, 10) : NaN;
+    return n >= 0 ? n.toLocaleString("en-US") : "";
+  }
   function fmtText(src, ctx) {
     var keep = [];
     function hold(html) { keep.push(html); return "\u0000" + (keep.length - 1) + "\u0000"; }
     var s = String(src == null ? "" : src);
     s = s.replace(/\{count\}/g, function () { return hold('<span data-bind="count">' + ctx.total + "</span>"); });
     s = s.replace(/\{hours\}/g, function () { return hold(esc(ctx.hours)); });
+    s = s.replace(/\{ratings\}/g, function () { return hold(esc(ctx.ratings || "")); });
     s = esc(s);
     s = s.replace(/\[([^\]\n]+)\]\(([^)\s]+)\)/g, function (m, text, url) {
       url = url.replace(/&amp;/g, "&").replace(/\{(\w+)\}/g, function (t, k) { return ctx.links[k] != null ? ctx.links[k] : t; });
@@ -150,7 +299,8 @@
       var ctx = {
         total: total,
         links: links,
-        hours: cfg.hours ? hoursSentence(cfg) + (cfg.hoursNote ? " " + cfg.hoursNote : "") : ""
+        hours: cfg.hours ? hoursSentence(cfg) + (cfg.hoursNote ? " " + cfg.hoursNote : "") : "",
+        ratings: grabCount(cfg)
       };
       each("[data-copy]", function (el) {
         var v = copyValue(copy, el.getAttribute("data-copy"));
@@ -229,7 +379,7 @@
         var n = k.items.length, span = n % 4 ? 4 - n % 4 : 4;
         var cards = k.items.map(function (id, d) {
           var it = idx[id].item;
-          return '<article class="card reveal" data-delay="' + d + '"><div class="dish-img">' + stickerHTML(id, picks) + imgHTML(it) +
+          return '<article class="card reveal' + (it.soldOut ? " is-soldout" : "") + '" data-delay="' + d + '"><div class="dish-img">' + stickerHTML(id, picks) + imgHTML(it) + soldOutHTML(it) +
             '</div><div class="card-body"><h3>' + esc(it.name) + '</h3><span class="cat">' + esc(idx[id].section.title) + "</span>" +
             (it.description ? '<p class="card-desc">' + esc(it.description) + "</p>" : "") + "</div>" +
             grabBtnHTML(cfg, "Order via Grab", " btn-grab--block") + "</article>";
@@ -260,8 +410,8 @@
         var num = n + 1 < 10 ? "0" + (n + 1) : String(n + 1);
         var dishes = sec.items.map(function (it) {
           var mine = picksOf(it.id, picks).map(function (k) { return k.id; }).join(" ");
-          return '<article class="dish"' + (mine ? ' data-pick="' + mine + '"' : "") + '><div class="dish-img">' +
-            stickerHTML(it.id, picks) + imgHTML(it) + '</div><div class="dish-body"><h3>' + esc(it.name) + "</h3>" +
+          return '<article class="dish' + (it.soldOut ? " is-soldout" : "") + '"' + (mine ? ' data-pick="' + mine + '"' : "") + '><div class="dish-img">' +
+            stickerHTML(it.id, picks) + imgHTML(it) + soldOutHTML(it) + '</div><div class="dish-body"><h3>' + esc(it.name) + "</h3>" +
             (it.description ? '<p class="dish-desc">' + esc(it.description) + "</p>" : "") + "</div>" +
             grabBtnHTML(cfg, "Order via Grab", " btn-grab--block") + "</article>";
         }).join("");
@@ -270,6 +420,31 @@
           '</h2><span class="count">' + sec.items.length + " items</span></div>" +
           '<div class="dish-grid">' + dishes + "</div></section>";
       }).join("");
+    });
+
+    // Home page spotlight: one featured item (new or seasonal), switched on in the editor
+    var spot = cfg.spotlight || {};
+    each("[data-spotlight]", function (sec) {
+      var hit = spot.enabled && spot.item ? idx[spot.item] : null;
+      sec.hidden = !hit;
+      if (!hit) return;
+      var it = hit.item, sctx = ctx || { total: total, links: cfg.links || {}, hours: "", ratings: "" };
+      var q = function (s) { return sec.querySelector(s); };
+      q("[data-spot-img]").innerHTML = imgHTML(it) + soldOutHTML(it);
+      q("[data-spot-badge]").textContent = spot.badge || "";
+      q("[data-spot-badge]").hidden = !spot.badge;
+      q("[data-spot-cat]").textContent = hit.section.title;
+      q("[data-spot-title]").innerHTML = fmtText(spot.title || it.name, sctx);
+      var txt = spot.text || it.description || "";
+      q("[data-spot-text]").innerHTML = fmtText(txt, sctx);
+      q("[data-spot-text]").hidden = !txt;
+      q("[data-spot-button]").textContent = spot.button || "Order on Grab";
+    });
+
+    // QR codes (Contact page): drawn from the current link, so they follow the editor's settings
+    each("[data-qr]", function (el) {
+      var url = safeUrl(cfg.links && cfg.links[el.getAttribute("data-qr")]);
+      if (url) el.innerHTML = QR.svg(url);
     });
 
     // Videos: each video spot plays the file chosen in config.js; its cover image has the same name with .webp
@@ -287,14 +462,15 @@
       }
     });
 
-    // Grab rating stars (Reviews & FAQ page): the gold part follows the score, e.g. 4.8 fills 96%
+    // Grab rating (Reviews & FAQ page): the number, and stars whose gold part follows it (4.8 fills 96%)
+    var score = cfg.grabRating ? parseFloat(cfg.grabRating.score) : NaN;
+    if (score > 0) score = Math.min(5, score);
+    each("[data-grab-score]", function (el) { if (score > 0) el.textContent = score.toFixed(1); });
     each("[data-rating-stars]", function (el) {
-      var score = parseFloat(copyValue(copy, "feedback.ratingScore"));
       if (!(score > 0)) return;
-      score = Math.min(5, score);
       var fill = el.querySelector(".rating-stars-fill");
       if (fill) fill.style.width = (score / 5 * 100) + "%";
-      el.setAttribute("aria-label", score + " out of 5 stars");
+      el.setAttribute("aria-label", score.toFixed(1) + " out of 5 stars");
     });
 
     // Customer reviews (Reviews & FAQ page) — the section stays hidden until there is at least one
@@ -389,6 +565,28 @@
   }
   // The build step only needs the content rendered; stop before adding interactivity
   if (window.__LEBEAN_PRERENDER) return;
+
+  // "Download QR code" button: saves a print-ready PNG of the Grab QR code
+  document.addEventListener("click", function (e) {
+    var btn = e.target.closest ? e.target.closest("[data-qr-download]") : null;
+    if (!btn) return;
+    var links = (CFG && CFG.links) || {}, url = safeUrl(links[btn.getAttribute("data-qr-download")]);
+    var m = url && QR.make(url);
+    if (!m) return;
+    var n = m.length, cell = Math.floor(1000 / (n + 8)), pad = cell * 4, size = cell * n + pad * 2, foot = Math.round(size * 0.16);
+    var cv = document.createElement("canvas"); cv.width = size; cv.height = size + foot;
+    var g = cv.getContext("2d");
+    g.fillStyle = "#fff"; g.fillRect(0, 0, cv.width, cv.height);
+    g.fillStyle = "#2a1a04";
+    for (var y = 0; y < n; y++) for (var x = 0; x < n; x++) if (m[y][x]) g.fillRect(pad + x * cell, pad + y * cell, cell, cell);
+    g.textAlign = "center"; g.font = "700 " + Math.round(foot * 0.36) + "px system-ui, sans-serif";
+    g.fillText(btn.getAttribute("data-qr-label") || "Scan to order on GrabFood", size / 2, size + foot * 0.35);
+    cv.toBlob(function (b) {
+      var a = document.createElement("a"); a.href = URL.createObjectURL(b); a.download = "le-bean-grab-qr.png";
+      document.body.appendChild(a); a.click(); a.remove();
+      setTimeout(function () { URL.revokeObjectURL(a.href); }, 4000);
+    }, "image/png");
+  });
   if (PREVIEW) {
     var badge = document.createElement("div");
     badge.className = "preview-badge";

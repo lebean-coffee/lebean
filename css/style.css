@@ -1262,3 +1262,31 @@ h1, h2, h3, h4 {
 .rating-link { flex-shrink: 0; }
 @media (max-width: 560px) { .rating-summary { padding: 1.3rem; } .rating-link { width: 100%; } }
 @media (min-width: 1000px) { .reviews { grid-template-columns: repeat(3, 1fr); } }
+
+/* ---------- v25: sold out, spotlight, Grab QR code ---------- */
+.soldout-tag { position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%) rotate(-6deg); z-index: 2; background: var(--bean-deep); color: var(--cream);
+  font-weight: 700; font-size: 0.85rem; letter-spacing: 0.06em; text-transform: uppercase; padding: 0.45rem 0.9rem; border-radius: 999px; white-space: nowrap;
+  box-shadow: 0 10px 24px -10px rgba(0, 0, 0, 0.5); }
+.is-soldout .dish-img img { opacity: 0.42; filter: grayscale(0.7); }
+.is-soldout h3 { opacity: 0.6; }
+
+.spotlight-section[hidden] { display: none; }
+.spotlight { display: grid; grid-template-columns: minmax(220px, 380px) 1fr; gap: clamp(1.4rem, 4vw, 3.4rem); align-items: center;
+  background: var(--cream); color: var(--bean); border-radius: var(--r-lg); padding: clamp(1.1rem, 3vw, 2rem); }
+.spotlight-img { border-radius: calc(var(--r-lg) - 8px); }
+.spotlight-meta { display: flex; flex-wrap: wrap; align-items: center; gap: 0.6rem; margin: 0 0 0.9rem; }
+.spotlight-badge { background: var(--caramel); color: var(--bean-deep); font-weight: 700; font-size: 0.8rem; letter-spacing: 0.1em; text-transform: uppercase;
+  padding: 0.35rem 0.8rem; border-radius: 999px; }
+.spotlight-badge[hidden] { display: none; }
+.spotlight-cat { font-size: 0.85rem; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase; opacity: 0.6; }
+.spotlight h2 { font-size: clamp(2rem, 4.6vw, 3.4rem); letter-spacing: -0.035em; line-height: 1; margin: 0 0 0.9rem; }
+.spotlight-text { font-size: 1.08rem; line-height: 1.55; max-width: 46ch; margin: 0 0 1.5rem; opacity: 0.85; }
+.spotlight-text[hidden] { display: none; }
+@media (max-width: 700px) { .spotlight { grid-template-columns: 1fr; } }
+
+.qr-card { display: flex; align-items: center; gap: 1.3rem; margin-top: 2rem; padding: 1.2rem; border: 1px solid rgba(59, 37, 7, 0.14); border-radius: var(--r-lg); background: #fff; color: var(--bean); }
+.qr-code { flex-shrink: 0; width: 150px; height: 150px; border-radius: 14px; overflow: hidden; background: #fff; }
+.qr-code svg { display: block; width: 100%; height: 100%; }
+.qr-body h3 { font-size: 1.3rem; letter-spacing: -0.02em; margin: 0 0 0.4rem; }
+.qr-body p { margin: 0 0 0.9rem; font-size: 0.95rem; line-height: 1.5; opacity: 0.8; }
+@media (max-width: 480px) { .qr-card { flex-direction: column; align-items: flex-start; } .qr-code { width: 170px; height: 170px; } }
